@@ -9,6 +9,7 @@ class Migration:
         :param matrix: input migration matrix
         """
         self.matrix = matrix
+        self.shape = matrix.shape[0]
 
     def produce_coalescence(self) -> np.ndarray:
         """
@@ -17,7 +18,15 @@ class Migration:
         """
         A = self.produce_coefficient_matrix()
         b = self.produce_solution_vector()
-        return np.linalg.solve(A, b)
+        x = np.linalg.solve(A, b)
+        T_mat = np.zeros((self.shape, self.shape))
+        cur_ind = 0
+        for i in range(self.shape):
+            for j in range(i, self.shape):
+                T_mat[i, j] = x[cur_ind]
+                T_mat[j, i] = x[cur_ind]
+                cur_ind += 1
+        return T_mat
 
     def calculate_first_coefficients(self, j: int, i: int, same_pop: int, lower_bound: int, upper_bound: int,
                                      p_list: list, counter: list) -> float:
