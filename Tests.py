@@ -166,7 +166,7 @@ def test_produce_fst() -> None:
     test_mat3 = motif13_Tmat(M)
     F_3 = motif13_Fmat(M)
     T_3 = Coalescence(test_mat3)
-    result_3 = np.zeros((shape, shape))  # T_3.produce_fst()
+    result_3 = T_3.produce_fst()
     test_name3 = "test 3: motif 13 with M=3"
     test_3 = [test_name3, test_mat3, result_3, F_3]
     tests = [test_1, test_2, test_3]
@@ -181,6 +181,46 @@ def test_produce_fst() -> None:
         print(".......................................................................\n")
 
 
+def test_MtoF():
+    """
+    test the transformation M->T->F
+    """
+    # test 1, case A in Xiran's paper
+    M_1 = np.array([[0, 2, 0, 1], [0, 0, 1, 2], [2, 1, 0, 0], [1, 0, 2, 0]])
+    F_1 = np.array([[0, 0.11, 0.11, 0.11], [0.11, 0, 0.11, 0.11], [0.11, 0.11, 0, 0.11], [0.11, 0.11, 0.11, 0]])
+    name_1 = " Case A topmost matrix in Xiran's paper"
+    test_1 = (M_1, F_1, name_1)
+    M_2 = np.array([[0, 1.87, 1.48, 0.74], [0.65, 0, 1.74, 0.17], [1.73, 0, 0, 1.95], [1.7, 0.68, 0.46, 0]])
+    F_2 = np.array([[0, 0.1, 0.09, 0.1], [0.1, 0, 0.12, 0.13], [0.09, 0.12, 0, 0.1], [0.1, 0.13, 0.1, 0]])
+    name_2 = " Case B topmost matrix in Xiran's paper"
+    test_2 = (M_2, F_2, name_2)
+    M_3 = np.array([[0, 1.27, 0.57, 0.72], [0.63, 0, 1.41, 1.33], [0, 0.01, 0, 2.97], [1.93, 2.1, 1, 0]])
+    F_3 = np.array([[0, 0.12, 0.14, 0.09], [0.12, 0, 0.11, 0.08], [0.14, 0.11, 0, 0.09], [0.09, 0.08, 0.09, 0]])
+    name_3 = " Case C in Xiran's paper"
+    test_3 = (M_3, F_3, name_3)
+    M_4 = np.array([[0, 6.87, 0.37, 3.19], [6.87, 0, 2.1, 0.24], [0.37, 2.1, 0, 4.71], [3.19, 0.24, 4.71, 0]])
+    F_4 = np.array([[0, 0.03, 0.06, 0.05], [0.03, 0, 0.06, 0.06], [0.06, 0.06, 0, 0.04], [0.05, 0.06, 0.04, 0]])
+    name_4 = " Case D in Xiran's paper"
+    test_4 = (M_4, F_4, name_4)
+    M_5 = np.array([[0, 1, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 1, 0]])
+    F_5 = F_1
+    name_5 = " Case A middle migration matrix in Xiran's paper"
+    test_5 = (M_5, F_5, name_5)
+    tests = [test_1, test_2, test_3, test_4,test_5]
+    for i, tup in enumerate(tests):
+        print(f"Performing test {i + 1}: {tup[2]} with migration matrix:\n{tup[0]}\n")
+        m = Migration(tup[0])
+        t = Coalescence(m.produce_coalescence())
+        f = t.produce_fst()
+        print(f"Calculated Fst matrix (rounded to two decimal places) is:\n {f.round(decimals=2)}\n")
+        if np.array_equal(tup[1].round(decimals=2), f.round(decimals=2)):
+            print(Fore.GREEN + f"Passed test {i + 1}!")
+        else:
+            print(Fore.RED + f"Failed test {i + 1}\n Fst matrix should be:\n{tup[1]}")
+        print(".......................................................................\n")
+
+
 if __name__ == "__main__":
-    test_produce_coalescence()
-    test_produce_fst()
+    # test_produce_coalescence()
+    # test_produce_fst()
+    test_MtoF()

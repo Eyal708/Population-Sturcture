@@ -33,3 +33,86 @@ class Coalescence:
         :return: The corresponding migration matrix
         """
         pass
+
+    def produce_variable_vector(self) -> np.ndarray:
+        """
+        produces and returns the variable vector x corresponding to the object's matrix
+        :return: the variable vector x
+        """
+
+    def produce_coefficient_mat(self, x: np.ndarray, b: np.ndarray) -> np.ndarray:
+
+        """
+         produces and returns the corresponding coefficient matrix, assuming xx(T) is invertible.
+        :param x: variable vector constructed from coefficient
+        :param b: solution vector
+        :return: The corresponding coefficient matrix (A)
+        """
+
+        x = x.reshape(x.shape[0], 1)
+        x_T = np.transpose(x)
+        xx_T = x @ x_T
+        xx_T_inv = np.linalg.inv(xx_T)
+        return np.linalg.multi_dot([b, x_T, xx_T_inv])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

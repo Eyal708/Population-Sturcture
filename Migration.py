@@ -30,6 +30,17 @@ class Migration:
 
     def calculate_first_coefficients(self, j: int, i: int, same_pop: int, lower_bound: int, upper_bound: int,
                                      p_list: list, counter: list) -> float:
+        """
+        calculates the coefficients for the first n equations
+        :param j: column of coefficient matrx
+        :param i: row of coefficient matrix
+        :param same_pop: The column corresponding to T(i,i)
+        :param lower_bound: j values in range [lower_bound, upper_bound] correspond to coefficient -M(i,i+counter)
+        :param upper_bound: j values in range [lower_bound, upper_bound] correspond to coefficient -M(i,i+counter)
+        :param p_list: all values that are smaller than i
+        :param counter: counts the number of time j was in the interval [lower_bound,upper_bound]
+        :return: The coefficient in place [i,j], for i in [n-1]
+        """
         n = self.matrix.shape[0]
         if j == same_pop:
             return 1 + np.sum(self.matrix[i, :])
@@ -42,6 +53,14 @@ class Migration:
         return 0
 
     def calculate_last_coefficients(self, j, cur_pop, other_pop) -> float:
+        """
+        calculates the coefficients for the last (n choose 2) rows in the coefficient matrx
+        :param j: the column in the coefficient matrix
+        :param cur_pop: the index of the population that corresponds to the current value
+        :param other_pop: the index of the other population that corresponds to the current value
+        :return: The coefficient in the coefficient matrix according to certain conditions deduced from
+        Wilkinson-Herbots' equations.
+        """
         n = self.matrix.shape[0]
         if j == np.sum([n - k for k in range(other_pop)]) + (cur_pop - other_pop):
             return float(np.sum(self.matrix[[cur_pop, other_pop], :]))
@@ -90,7 +109,11 @@ class Migration:
         return coefficient_mat
 
     def produce_solution_vector(self):
-        n = self.matrix.shape[0]
+        """
+        produce the solution vector(b), according to Wilkinson-Herbot's equations
+        :return: solution vector b
+        """
+        n = self.shape
         n_first = np.repeat(1, n)
         n_last = np.repeat(2, comb(n, 2))
         return np.hstack((n_first, n_last))
