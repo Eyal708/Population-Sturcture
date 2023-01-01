@@ -221,6 +221,6 @@ def test_MtoF():
 
 
 if __name__ == "__main__":
-    # test_produce_coalescence()
-    # test_produce_fst()
+    test_produce_coalescence()
+    test_produce_fst()
     test_MtoF()
