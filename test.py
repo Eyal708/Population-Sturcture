@@ -1,8 +1,12 @@
 import numpy as np
+def change_mat(a):
+    a[0,0] = 0
+a = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+b = np.triu_indices(a.shape[0])
+change_mat(a)
+print(a)
 
-x = np.array([1, 2, 3, 4])
-x = x.reshape(x.shape[0], 1)
-print(x.shape)
-x_t = np.transpose(x)
-print(np.matmul([x, x_t]))
-
+# c = a[b]
+# print(a)
+# print(b)
+# print(c)

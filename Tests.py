@@ -10,7 +10,7 @@ def test_produce_coalescence() -> None:
     """
     test the produce_coalescence function of the Migration class
     """
-    print("Testing produce_coalescence:\n")
+    print(Fore.BLUE + "Testing produce_coalescence:\n")
     # test 1: random matrix
     test_name1 = "Test 1: Random matrix"
     test_mat1 = np.array([[0, 0.3, 0.2], [0.1, 0, 0.4], [0.4, 0.2, 0]])
@@ -141,7 +141,7 @@ def motif14_Fmat(M: int) -> np.ndarray:
 
 
 def test_produce_fst() -> None:
-    print("Testing produce_fst:\n")
+    print(Fore.BLUE + "Testing produce_fst:\n")
     # test 1: motif 8 - 4 isolated populations
     shape = 4
     test_mat1 = np.ones((shape, shape))  # Coalescence matrix
@@ -185,6 +185,7 @@ def test_MtoF():
     """
     test the transformation M->T->F
     """
+    print(Fore.BLUE + "Testing the transformation M->T->F\n")
     # test 1, case A in Xiran's paper
     M_1 = np.array([[0, 2, 0, 1], [0, 0, 1, 2], [2, 1, 0, 0], [1, 0, 2, 0]])
     F_1 = np.array([[0, 0.11, 0.11, 0.11], [0.11, 0, 0.11, 0.11], [0.11, 0.11, 0, 0.11], [0.11, 0.11, 0.11, 0]])
@@ -206,7 +207,7 @@ def test_MtoF():
     F_5 = F_1
     name_5 = " Case A middle migration matrix in Xiran's paper"
     test_5 = (M_5, F_5, name_5)
-    tests = [test_1, test_2, test_3, test_4,test_5]
+    tests = [test_1, test_2, test_3, test_4, test_5]
     for i, tup in enumerate(tests):
         print(f"Performing test {i + 1}: {tup[2]} with migration matrix:\n{tup[0]}\n")
         m = Migration(tup[0])
@@ -220,7 +221,36 @@ def test_MtoF():
         print(".......................................................................\n")
 
 
+def test_produce_migration():
+    print(Fore.BLUE + "Testing produce_migration:\n")
+    # test 1: random matrix
+    test_name1 = "Test 1: Random matrix"
+    test_mat1 = np.array([[0, 0.8], [0.8, 0]])
+    test_1 = (test_name1, test_mat1)
+    tests = [test_1]
+    for test in tests:
+        name, M = test[0], test[1]
+        print(f"Performing test {name} starting with migration matrix:\n{M}")
+        m = Migration(M)
+        A = m.produce_coefficient_matrix()
+        T = m.produce_coalescence()
+        t = Coalescence(T)
+        M_res = t.produce_migration()
+        A_res = t.produce_coefficient_mat()
+        if np.array_equal(M.round(decimals=6), M_res.round(decimals=6)) and \
+                np.array_equal(A.round(decimals=6), A_res.round(decimals=6)):
+            print(Fore.GREEN + f"Passed test {name}!")
+        else:
+            print(Fore.RED + f"Failed test {name}\n migration matrix matrix should be:\n{M}\n")
+            print(f"got\n{M_res}")
+            print(Fore.RED + f"coefficient matrix should be:\n{A}\n")
+            print(f"got\n{A_res}")
+
+        print(".......................................................................\n")
+
+
 if __name__ == "__main__":
     test_produce_coalescence()
-    test_produce_fst()
-    test_MtoF()
+    # test_produce_fst()
+    # test_MtoF()
+    #test_produce_migration()

@@ -79,10 +79,10 @@ class Migration:
 
     def produce_coefficient_matrix(self) -> np.ndarray:
         """
-        produce and return the coefficient matrix used to calculate the T matrix(coalescence)
+        produce and return the coefficient matrix used to calculate the T matrix(coalescence).
         :return: Coefficient matrix corresponding to object's migration matrix
         """
-        n = self.matrix.shape[0]
+        n = self.shape
         n_last_equations = comb(n, 2)
         n_first_equations = n
         mat_size = n_first_equations + n_last_equations
