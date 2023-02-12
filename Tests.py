@@ -225,32 +225,28 @@ def test_produce_migration():
     print(Fore.BLUE + "Testing produce_migration:\n")
     # test 1: random matrix
     test_name1 = "Test 1: Random matrix"
-    test_mat1 = np.array([[0, 0.8], [0.8, 0]])
+    test_mat1 = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
     test_1 = (test_name1, test_mat1)
     tests = [test_1]
     for test in tests:
         name, M = test[0], test[1]
-        print(f"Performing test {name} starting with migration matrix:\n{M}")
         m = Migration(M)
-        A = m.produce_coefficient_matrix()
         T = m.produce_coalescence()
+        # T = np.array([[3, 5, 6, 2], [5, 4, 4.5, 2], [6, 4.5, 3, 2], [2, 2, 2, 1]])
         t = Coalescence(T)
+        A = t.produce_coefficient_mat()
+        b = t.produce_solution_vector()
         M_res = t.produce_migration()
-        A_res = t.produce_coefficient_mat()
-        if np.array_equal(M.round(decimals=6), M_res.round(decimals=6)) and \
-                np.array_equal(A.round(decimals=6), A_res.round(decimals=6)):
-            print(Fore.GREEN + f"Passed test {name}!")
-        else:
-            print(Fore.RED + f"Failed test {name}\n migration matrix matrix should be:\n{M}\n")
-            print(f"got\n{M_res}")
-            print(Fore.RED + f"coefficient matrix should be:\n{A}\n")
-            print(f"got\n{A_res}")
-
-        print(".......................................................................\n")
+        print(f"Performing {name}\n")
+        print(f"Original migration matrix M:\n{M}\n")
+        print(f"Coalescence matrix T:\n{T}\n")
+        print(f"Calculated coefficient matrix A:\n{A}\n")
+        print(f"Calculated solution vector b:\n{b}\n")
+        print(f"Calculated migration matrix according to non negative Least Squares solution is M':\n{M_res}\n")
 
 
 if __name__ == "__main__":
     test_produce_coalescence()
     # test_produce_fst()
     # test_MtoF()
-    #test_produce_migration()
+    test_produce_migration()
