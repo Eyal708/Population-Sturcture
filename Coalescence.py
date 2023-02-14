@@ -29,19 +29,22 @@ class Coalescence:
                 F_mat[i, j], F_mat[j, i] = F_i_j, F_i_j
         return F_mat
 
-    def produce_migration(self) -> np.ndarray:
+    def produce_migration(self, bounds=(0, np.inf)) -> np.ndarray:
         """
         produce and return the migration matrix induced by the coefficient matrix A(which is induced by T).
+        :param bounds: bounds for each individual variable. default is 0 <= x < inf. bounds should be given as a tuple
+        of 2 arrays of size n**2-n (where n is the number of populations). first array represents lower bounds, second
+        array represents upper bounds. if a tuple with 2 scalars is given instead, they will be the bounds for each
+        variable.
         :return: Migration matrix corresponding to object's Coalescence matrix
         """
         n = self.shape
         M = np.zeros((n, n))
         A = self.produce_coefficient_mat()
         b = self.produce_solution_vector()
-        #x, residual = (sp.optimize.nnls(A, b, 10000))
-        ls_sol = sp.optimize.lsq_linear(A, b, bounds=(0, np.inf),max_iter=1000, tol=0.0001)
-        x = ls_sol['x']
-        norm = 0.5*np.linalg.norm(A@x -b, ord=2)**2
+        ls_sol = sp.optimize.lsq_linear(A, b, bounds=(bounds[0], bounds[1]), max_iter=1000, tol=0)
+        x = ls_sol.x
+        # norm = 0.5 * np.linalg.norm(A @ x - b, ord=2) ** 2
         for i in range(n):
             start_ind = i * (n - 1)
             M[i, 0:i] = x[start_ind:start_ind + i]
@@ -97,7 +100,7 @@ class Coalescence:
     def v(self, i):
         return self.shape + comb(self.shape, 2) + i
 
-    def produce_solution_vector(self):
+    def produce_solution_vector(self) -> np.ndarray:
         """
         produce the solution vector(b), according to Wilkinson-Herbot's equations
         :return: solution vector b
@@ -105,6 +108,6 @@ class Coalescence:
         n = self.shape
         nC2 = comb(n, 2)
         b = np.zeros((2 * n + nC2))
-        b[0:n] = self.matrix.diagonal()
+        b[0:n] = 1 - self.matrix.diagonal()
         b[n: n + nC2] = 2
         return b

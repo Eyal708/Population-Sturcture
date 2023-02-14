@@ -1,6 +1,7 @@
 import numpy as np
 from Migration import Migration
 from Coalescence import Coalescence
+from Fst import Fst
 from colorama import Fore, init
 
 init(autoreset=True)
@@ -226,8 +227,11 @@ def test_produce_migration():
     # test 1: random matrix
     test_name1 = "Test 1: Random matrix"
     test_mat1 = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
+    test_name2 = "Test2: 4x4 random matrix"
+    test_mat2 = np.array(([[0, 2, 0, 1], [0, 0, 1, 2], [2, 1, 0, 0], [1, 0, 2, 0]]))
     test_1 = (test_name1, test_mat1)
-    tests = [test_1]
+    test_2 = (test_name2, test_mat2)
+    tests = [test_1, test_2]
     for test in tests:
         name, M = test[0], test[1]
         m = Migration(M)
@@ -236,6 +240,7 @@ def test_produce_migration():
         t = Coalescence(T)
         A = t.produce_coefficient_mat()
         b = t.produce_solution_vector()
+        num_of_vars = M.shape[0] ** 2 - M.shape[0]
         M_res = t.produce_migration()
         print(f"Performing {name}\n")
         print(f"Original migration matrix M:\n{M}\n")
@@ -245,8 +250,16 @@ def test_produce_migration():
         print(f"Calculated migration matrix according to non negative Least Squares solution is M':\n{M_res}\n")
 
 
+def test_produce_coalescence_from_fst():
+    f_1 = np.array([[0, 0.5, 0.4], [0.5, 0, 0.6], [0.4, 0.6, 0]])
+    F_1 = Fst(f_1)
+    T = F_1.produce_coalescence(bounds=(0, np.inf))
+    print(T)
+
+
 if __name__ == "__main__":
-    test_produce_coalescence()
+    # test_produce_coalescence()
     # test_produce_fst()
     # test_MtoF()
-    test_produce_migration()
+    # test_produce_migration()
+    test_produce_coalescence_from_fst()
