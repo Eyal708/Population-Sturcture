@@ -23,7 +23,7 @@ def compute_coalescence(t: np.ndarray, f: np.ndarray, n: int) -> list:
     :return: A list of all the equations that describe the connection between coalescent times and Fst
     of all populations 1,2...n (Slatkin).
     """
-    added_eqs = 0
+    # added_eqs = 0
     eqs_lst = []
     nC2 = comb(n, 2)
     k = 0

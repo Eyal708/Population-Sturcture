@@ -42,7 +42,7 @@ class Coalescence:
         M = np.zeros((n, n))
         A = self.produce_coefficient_mat()
         b = self.produce_solution_vector()
-        ls_sol = sp.optimize.lsq_linear(A, b, bounds=(bounds[0], bounds[1]), max_iter=1000, tol=0)
+        ls_sol = sp.optimize.lsq_linear(A, b, bounds=(bounds[0], bounds[1]), max_iter=1000)
         x = ls_sol.x
         # norm = 0.5 * np.linalg.norm(A @ x - b, ord=2) ** 2
         for i in range(n):
