@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from Migration import Migration
 from Coalescence import Coalescence
 from Fst import Fst
@@ -262,4 +263,8 @@ if __name__ == "__main__":
     # test_produce_fst()
     # test_MtoF()
     # test_produce_migration()
-    test_produce_coalescence_from_fst()
+    #test_produce_coalescence_from_fst()
+    x = [0, 0.5, 1]
+    y = 3
+    fig, ax = plt.subplots()
+    ax.plot(x, y)

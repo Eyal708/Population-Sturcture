@@ -14,7 +14,7 @@ class Fst:
 
     def produce_coalescence(self, x0=None, bounds=(0, np.inf)) -> np.ndarray:
         """
-        generates the corresponding Coalescence times matrix and returns it.
+        generates a possible  corresponding coalescence times matrix and returns it.
         :param bounds: bounds for each variable T(i,j), default is (0, inf). bounds should be a tuple of two arrays,
         first is lower bounds for each variable, second is upper bounds for each variable. If bounds is a tuple of
         two scalars, the same bounds are applied for each variable.
