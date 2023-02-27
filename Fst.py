@@ -18,12 +18,12 @@ class Fst:
         :param bounds: bounds for each variable T(i,j), default is (0, inf). bounds should be a tuple of two arrays,
         first is lower bounds for each variable, second is upper bounds for each variable. If bounds is a tuple of
         two scalars, the same bounds are applied for each variable.
-        :param x0: initial guess for the variables, default is an array of ones.
+        :param x0: initial guess for the variables, default is a random vector with bounds (0,1).
         :return: A possible corresponding Coalescence time matrix- T.
         """
         n, nc2 = self.shape, comb(self.shape, 2)
         if x0 is None:
-            x0 = np.repeat(1, n + nc2)
+            x0 = np.random.uniform(low=0, high=2*n, size=(n + nc2, ))
         T = np.zeros((n, n))
         f_values = self.matrix[np.triu_indices(n, 1)]
         x = least_squares(compute_coalescence, x0=x0, args=(f_values, n), bounds=(bounds[0], bounds[1])).x

@@ -29,14 +29,14 @@ class Coalescence:
                 F_mat[i, j], F_mat[j, i] = F_i_j, F_i_j
         return F_mat
 
-    def produce_migration(self, bounds=(0, np.inf)) -> np.ndarray:
+    def produce_migration(self, bounds=(0, np.inf)) -> tuple:
         """
         produce and return the migration matrix induced by the coefficient matrix A(which is induced by T).
         :param bounds: bounds for each individual variable. default is 0 <= x < inf. bounds should be given as a tuple
         of 2 arrays of size n**2-n (where n is the number of populations). first array represents lower bounds, second
         array represents upper bounds. if a tuple with 2 scalars is given instead, they will be the bounds for each
         variable.
-        :return: Migration matrix corresponding to object's Coalescence matrix
+        :return: (Migration matrix corresponding to object's Coalescence matrix, output of scipy.optimize.lsq_linear).
         """
         n = self.shape
         M = np.zeros((n, n))
@@ -49,7 +49,7 @@ class Coalescence:
             start_ind = i * (n - 1)
             M[i, 0:i] = x[start_ind:start_ind + i]
             M[i, i + 1:n] = x[start_ind + i:start_ind + n - 1]
-        return M
+        return M, ls_sol
 
     def produce_coefficient_mat(self) -> np.ndarray:
         """

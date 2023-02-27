@@ -29,7 +29,7 @@ def compute_coalescence(t: np.ndarray, f: np.ndarray, n: int) -> list:
     k = 0
     for i in range(nC2):
         for j in range(i + 1, n):
-            eq = t[k] - (0.5 * (t[n + i] + t[n + j]) * ((1 + f[k]) / (1 - f[k])))
+            eq = t[k] - (0.5 * (t[nC2 + i] + t[nC2 + j]) * ((1 + f[k]) / (1 - f[k])))
             eqs_lst.append(eq)
             # if added_eqs < n:
             #     eqs_lst.append(eq)

@@ -4,12 +4,12 @@ import numpy as np
 import scipy as sp
 
 
-def generate_random_migration_mat(n: int = 3, bounds=(0, 1), decimals=None) -> np.ndarray:
+def generate_random_migration_mat(n: int = 3, bounds=(0, 2), decimals=2) -> np.ndarray:
     """
     Generates and returns a random migration matrix that follows conservative migration constraint.
     :param n: size of the migration matrix, default is 3.
-    :param bounds: lower and upper bounds on migration values. default is [0,1).
-    :param decimals: number of decimals to round the matrix' values. if None no rounding will be done (default).
+    :param bounds: lower and upper bounds on migration values. default is [0,2).
+    :param decimals: number of decimals to round the matrix' values, default is 2.
     :return: A random migration matrix with conservative migration.
     """
     is_legal = False
@@ -17,7 +17,7 @@ def generate_random_migration_mat(n: int = 3, bounds=(0, 1), decimals=None) -> n
     while not is_legal:
         mat = np.zeros((n, n))
         random_mat = np.random.uniform(low=bounds[0], high=bounds[1], size=(n - 1, n))
-        mat[0:n - 1, ] = random_mat
+        mat[0:n - 1, ] = np.round(random_mat, decimals=decimals)
         np.fill_diagonal(mat, 0)
         # Create the coefficient matrix to find the missing values
         A = np.zeros((n, n - 1))
@@ -28,18 +28,16 @@ def generate_random_migration_mat(n: int = 3, bounds=(0, 1), decimals=None) -> n
         x = sp.optimize.lsq_linear(A, b).x
         is_legal = not np.any(x < 0)
     mat[n - 1, 0:n - 1] = x
-    if decimals is not None:
-        return np.round(mat, decimals=decimals)
-    return mat
+    return np.round(mat, decimals=decimals)
 
 
-def generate_pseudo_random_fst_mat(n: int = 3, bounds=(0, 1), decimals=None) -> np.ndarray:
+def generate_pseudo_random_fst_mat(n: int = 3, bounds=(0, 1), decimals=2) -> np.ndarray:
     """
     generate a pseudo random Fst matrix from a random migration matrix that follows the conservative migration
     constraint.
     :param n: size of the matrix. default is 3.
     :param bounds: lower and upper bound on migration values. Default is [0,1).
-    :param decimals:  number of decimals to round the matrix' values. if None no rounding will be done (default).
+    :param decimals:  number of decimals to round the matrix' values, default is 2.
     :return: Pseudo random Fst matrix that originated from a random migration matrix.
     """
     m = generate_random_migration_mat(n, bounds)
@@ -47,7 +45,5 @@ def generate_pseudo_random_fst_mat(n: int = 3, bounds=(0, 1), decimals=None) -> 
     t = M.produce_coalescence()
     T = Coalescence(t)
     random_f = T.produce_fst()
-    if decimals is not None:
-        return np.round(random_f, decimals=decimals)
-    return random_f
+    return np.round(random_f, decimals=decimals)
 
