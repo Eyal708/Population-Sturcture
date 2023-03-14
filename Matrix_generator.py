@@ -31,12 +31,12 @@ def generate_random_migration_mat(n: int = 3, bounds=(0, 2), decimals=2) -> np.n
     return np.round(mat, decimals=decimals)
 
 
-def generate_pseudo_random_fst_mat(n: int = 3, bounds=(0, 1), decimals=2) -> np.ndarray:
+def generate_pseudo_random_fst_mat(n: int = 3, bounds=(0, 2), decimals=2) -> np.ndarray:
     """
     generate a pseudo random Fst matrix from a random migration matrix that follows the conservative migration
     constraint.
     :param n: size of the matrix. default is 3.
-    :param bounds: lower and upper bound on migration values. Default is [0,1).
+    :param bounds: lower and upper bound on migration values. Default is [0,2).
     :param decimals:  number of decimals to round the matrix' values, default is 2.
     :return: Pseudo random Fst matrix that originated from a random migration matrix.
     """

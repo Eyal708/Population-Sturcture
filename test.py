@@ -1,6 +1,17 @@
 import numpy as np
 
-a = np.array([[1, 2, 3], [2, 1, 4], [3, 4, 1]])
-x = a.argmin(axis=1)
-y = np.diag_indices(3)[0]
-print(not np.any(x != y))
+
+def check_constraint(t: np.ndarray) -> bool:
+    """
+    gets a T matrix and returns True if it follows the within < inbetween constraint.
+    :param t: Coalescence times matrix.
+    :return: True if t follows the constraint, False otherwise.
+    """
+    min_indices = t.argmin(axis=1)
+    diag_indices = np.diag_indices(t.shape[0])[0]
+    return not np.any(min_indices != diag_indices)
+
+
+t = np.array([[0.9, 1, 1], [1, 0.8, 0.8], [1, 0.8, 0.9]])
+print(t)
+print(check_constraint(t))
