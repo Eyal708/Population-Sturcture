@@ -248,7 +248,7 @@ def test_produce_migration():
         print(f"Coalescence matrix T:\n{T}\n")
         print(f"Calculated coefficient matrix A:\n{A}\n")
         print(f"Calculated solution vector b:\n{b}\n")
-        print(f"Calculated migration matrix according to non negative Least Squares solution is M':\n{M_res}\n")
+        print(f"Calculated migration matrix according to non negative Least Squares solution is M':\n{M_res[0]}\n")
 
 
 def test_produce_coalescence_from_fst():
@@ -262,9 +262,6 @@ if __name__ == "__main__":
     # test_produce_coalescence()
     # test_produce_fst()
     # test_MtoF()
-    # test_produce_migration()
+    test_produce_migration()
     #test_produce_coalescence_from_fst()
-    x = [0, 0.5, 1]
-    y = 3
-    fig, ax = plt.subplots()
-    ax.plot(x, y)
+

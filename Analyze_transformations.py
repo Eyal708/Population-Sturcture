@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from Matrix_generator import generate_pseudo_random_fst_mat
 from Coalescence import Coalescence
 from Fst import Fst
+import time
+import pickle
 
 
 def analyze_t_matrices(f: np.ndarray, n=1000) -> list:
@@ -46,7 +48,7 @@ def check_constraint(t: np.ndarray) -> bool:
 def plots_1(n_matrices: 100, n_transformations: 1000, size=4) -> None:
     """
     plot that analyzes the T matrices in the F->T->M transformation.
-    :param n_matrices: number of pseudo-random Fst matrices to generate fo analysis.
+    :param n_matrices: number of pseudo-random Fst matrices to generate for analysis.
     :param n_transformations: number of transformations to generate from each Fst matrix
     :param size: size of each Fst matrix (number of populations).
     """
@@ -81,10 +83,6 @@ def plots_1(n_matrices: 100, n_transformations: 1000, size=4) -> None:
     plt.plot(matrices, avg_cost_good, '-o', color="green",
              label=f"Good T matrices (Avg = {np.round(good_cost_avg, 2)})")
     plt.plot(matrices, avg_cost_bad, '-o', color="red", label=f"Bad T matrices (Avg = {np.round(bad_cost_avg, 2)})")
-    # plt.annotate(f"Average: {np.round(bad_cost_avg, 2)}", (np.argmin(avg_cost_bad) + 1, np.min(avg_cost_bad)),
-    #              textcoords="offset points", xytext=(0, -10), ha='center', size=8)
-    # plt.annotate(f"Average: {np.round(good_cost_avg, 2)}", (np.argmax(avg_cost_good) + 1, np.max(avg_cost_good)),
-    #              textcoords="offset points", xytext=(0, 10), ha='center', size=8)
     plt.xlabel('F matrix')
     plt.xticks(ticks=x_ticks)
     plt.ylabel("Average cost")
@@ -92,14 +90,60 @@ def plots_1(n_matrices: 100, n_transformations: 1000, size=4) -> None:
     plt.show()
 
 
+def generate_and_save_transformations(f: np.ndarray, n_transformations: int, path: str) -> int:
+    """
+    Generates F->T>M transformations and saves it as a pickle file. The created pickle file contains a dictionary
+    with 3 keys: 'f', 't', 'm','cost'. The value of key 'f' is the initial F matrix. The values of each 't'
+    and 'm' keys is a list with all the matrices generated, where the index of the M matrix corresponds to the index
+    of the T matrix it was generated from. The value of the 'cost' key is a list with all the costs of T->M
+    transformations. Only T matrices that follow the within < inbetween constraint are used.
+    :param f: Initial Fst matrix.
+    :param n_transformations: number of F->T transformation to perform. Only T matrices that follow the constraint
+    are used for the T->M transformation, so the final number of matrices produced is unknown.
+    :param path: path for the saved pickle file.
+    :return: Number of M matrices produced, which is the number of T matrices that followed the constraint.
+    """
+    F = Fst(f)
+    mat_dict = {'f': f, 't': [], 'm': [], 'cost': []}
+    good_mats = 0
+    for i in range(n_transformations):
+        t = F.produce_coalescence()
+        if check_constraint(t):
+            T = Coalescence(t)
+            result = T.produce_migration()
+            m, cost = result[0], result[1].cost
+            mat_dict['t'].append(t)
+            mat_dict['m'].append(m)
+            mat_dict['cost'].append(cost)
+            good_mats += 1
+    pickle_file = open(path, 'ab')
+    pickle.dump(mat_dict, pickle_file)
+    pickle_file.close()
+    return good_mats
+
+
+def store_transformations(shape: int, n_matrices: int, n_transformations: int) -> None:
+    """
+    Stores F->T->M transformations from pseudo random matrices as pickle files.
+    :param shape: shape of the matrices to generate
+    :param n_matrices: How many F matrices to produce
+    :param n_transformations: How many transformations to generate from each F matrix. Only transformations where
+    T follows the constraint are saved.
+    """
+    for i in range(n_matrices):
+        f = generate_pseudo_random_fst_mat(n=shape)
+        generate_and_save_transformations(f, n_transformations, f"pickles/{shape}X{shape}_transformation_{i + 1}")
+
+
 if __name__ == "__main__":
+    # store_transformations(shape=3, n_matrices=100, n_transformations=1000)
+    # store_transformations(shape=5, n_matrices=100, n_transformations=1000)
+    file = open("pickles/5X5_transformation_94",'rb')
+    mats = pickle.load(file)
+    print(np.round(mats['t'][3],2))
+    print(np.round(mats['m'][3],2))
     # plots_1(100, 1000)
-    plots_1(100, 1000, size=3)
-    # plot_transformations(size=3)
-    # for i in range(5):
-    #     f = generate_pseudo_random_fst_mat(n=4)
-    #     print(f, "\n")
-    #     results = analyze_t_matrices(f)
-    #     print(f"% of matrices that follow the constraint: {results[0]}\n")
-    #     print(f"Average cost of the transformation T->M for T matrices that follow the constraint: {results[1]}\n")
-    #     print(f"For T matrices that don't follow the constraint: {results[2]}\n")
+    # start = time.time()
+    # plots_1(100, 1000, size=5)
+    # end = time.time()
+    # print(f"Running time is {end - start} seconds")

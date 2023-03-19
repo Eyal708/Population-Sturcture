@@ -1,4 +1,6 @@
 import numpy as np
+from Coalescence import Coalescence
+from Fst import Fst
 
 
 def check_constraint(t: np.ndarray) -> bool:
@@ -12,6 +14,16 @@ def check_constraint(t: np.ndarray) -> bool:
     return not np.any(min_indices != diag_indices)
 
 
-t = np.array([[0.9, 1, 1], [1, 0.8, 0.8], [1, 0.8, 0.9]])
+def check_produce_coalescence(mat: np.ndarray, guess):
+    t_mat = Coalescence(mat)
+    f_mat = t_mat.produce_fst()
+    f = Fst(f_mat)
+    new_t = f.produce_coalescence(x0=guess)
+    return new_t
+
+
+test_mat2 = np.array(([[1, 2, 3, 2], [2, 1, 2, 2], [3, 2, 1, 3], [2, 2, 3, 1]]))
+g = [2, 3, 2, 2, 2, 3, 1, 1, 1, 1]
+t = check_produce_coalescence(test_mat2, g)
 print(t)
-print(check_constraint(t))
+
