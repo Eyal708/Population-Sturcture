@@ -3,3 +3,5 @@ Code for generating and calculating transitions between F (Fst), T (coalescence 
 Libraries used:
 - numpy
 - Scipy
+- matplotlib
+- pickle
