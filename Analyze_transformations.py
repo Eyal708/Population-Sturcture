@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Matrix_generator import generate_pseudo_random_fst_mat
+from Matrix_generator import generate_random_migration_mat, generate_pseudo_random_fst_mat
 from Coalescence import Coalescence
 from Fst import Fst
+from Migration import Migration
 import time
 import pickle
+import seaborn as sb
+from Helper_funcs import check_constraint, diameter
 
 
 def analyze_t_matrices(f: np.ndarray, n=1000) -> list:
@@ -32,17 +35,6 @@ def analyze_t_matrices(f: np.ndarray, n=1000) -> list:
             bad_cost += cost
             bad_mats += 1
     return [good_mats, good_cost, bad_mats, bad_cost]
-
-
-def check_constraint(t: np.ndarray) -> bool:
-    """
-    gets a T matrix and returns True if it follows the within < inbetween constraint.
-    :param t: Coalescence times matrix.
-    :return: True if t follows the constraint, False otherwise.
-    """
-    min_indices = t.argmin(axis=1)
-    diag_indices = np.diag_indices(t.shape[0])[0]
-    return not np.any(min_indices != diag_indices)
 
 
 def plots_1(n_matrices: 100, n_transformations: 1000, size=4) -> None:
@@ -90,60 +82,237 @@ def plots_1(n_matrices: 100, n_transformations: 1000, size=4) -> None:
     plt.show()
 
 
-def generate_and_save_transformations(f: np.ndarray, n_transformations: int, path: str) -> int:
+def generate_and_save_transformations(m: np.ndarray, n_transformations: int, path: str) -> int:
     """
     Generates F->T>M transformations and saves it as a pickle file. The created pickle file contains a dictionary
-    with 3 keys: 'f', 't', 'm','cost'. The value of key 'f' is the initial F matrix. The values of each 't'
-    and 'm' keys is a list with all the matrices generated, where the index of the M matrix corresponds to the index
-    of the T matrix it was generated from. The value of the 'cost' key is a list with all the costs of T->M
-    transformations. Only T matrices that follow the within < inbetween constraint are used.
-    :param f: Initial Fst matrix.
+    with 8 keys:
+    1) 'true_m': the migration matrix from which the F matrix was generated, meaning it is the 'true'
+    underlying migration matrix.
+    2) 'f': the starting F matrix.
+    3) 'good_t': list of good T matrices generated from f.
+    4) 'bad_t': list of bad T matrices generated from f.
+    5) 'good_m': list of M matrices generated from the good T matrices.
+    6) 'bad_m': list of M matrices generated from the bad T matrices.
+    7) 'good_cost': list of costs of the T->M transformation for the good T matrices.
+    8) 'bad_cost': list of costs of the T->M transformation for the bad T matrices.
+    :param m: Initial M matrix from which the F matrix is generated.
     :param n_transformations: number of F->T transformation to perform. Only T matrices that follow the constraint
     are used for the T->M transformation, so the final number of matrices produced is unknown.
     :param path: path for the saved pickle file.
-    :return: Number of M matrices produced, which is the number of T matrices that followed the constraint.
+    :return: Number of good T matrices produced from f.
     """
+    M = Migration(m)
+    T = Coalescence(M.produce_coalescence())
+    f = np.round(T.produce_fst(), decimals=2)
     F = Fst(f)
-    mat_dict = {'f': f, 't': [], 'm': [], 'cost': []}
+    mat_dict = {'true_m': m, 'f': f, 'good_t': [], 'bad_t': [], 'good_m': [], 'bad_m': [], 'good_cost': [],
+                'bad_cost': []}
     good_mats = 0
     for i in range(n_transformations):
         t = F.produce_coalescence()
+        T = Coalescence(t)
+        result = T.produce_migration()
+        m, cost = result[0], result[1].cost
         if check_constraint(t):
-            T = Coalescence(t)
-            result = T.produce_migration()
-            m, cost = result[0], result[1].cost
-            mat_dict['t'].append(t)
-            mat_dict['m'].append(m)
-            mat_dict['cost'].append(cost)
+            mat_dict['good_t'].append(t)
+            mat_dict['good_m'].append(m)
+            mat_dict['good_cost'].append(cost)
             good_mats += 1
+        else:
+            mat_dict['bad_t'].append(t)
+            mat_dict['bad_m'].append(m)
+            mat_dict['bad_cost'].append(cost)
+
     pickle_file = open(path, 'ab')
     pickle.dump(mat_dict, pickle_file)
     pickle_file.close()
     return good_mats
 
 
-def store_transformations(shape: int, n_matrices: int, n_transformations: int) -> None:
+def store_transformations(shape: int, n_matrices: int, n_transformations: int, dir_path: str) -> None:
     """
     Stores F->T->M transformations from pseudo random matrices as pickle files.
-    :param shape: shape of the matrices to generate
-    :param n_matrices: How many F matrices to produce
-    :param n_transformations: How many transformations to generate from each F matrix. Only transformations where
-    T follows the constraint are saved.
+    :param dir_path: path to directory to save the pickle files.
+    :param shape: shape of the matrices to generate.
+    :param n_matrices: How many F matrices to produce.
+    :param n_transformations: How many transformations to generate from each F matrix.
     """
     for i in range(n_matrices):
-        f = generate_pseudo_random_fst_mat(n=shape)
-        generate_and_save_transformations(f, n_transformations, f"pickles/{shape}X{shape}_transformation_{i + 1}")
+        m = generate_random_migration_mat(n=shape)
+        generate_and_save_transformations(m, n_transformations, f"{dir_path}/{shape}X{shape}_transformation_{i + 1}")
+
+
+def box_plot_pct():
+    sizes = np.array([[3], [4], [5]])
+    categories = np.repeat(sizes, 100)
+    data = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            num_t = len(mats['t'])
+            data.append(num_t / 1000 * 100)
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_xlabel('Number of populations(n)', fontsize=26)
+    fig.set_ylabel('Good T matrices(%)', fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.show()
+
+
+def box_plot_good_vs_bad():
+    categories = []
+    data = []
+    types = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            types.extend(['Good T matrices'] * len(mats['t']))
+            types.extend(['Bad T matrices'] * len(mats['t']))
+            for k in range(2 * len(mats['t'])):
+                categories.append(i)
+            data.extend(mats['cost'])
+            if i == 3:
+                data.extend([x + 6 for x in mats['cost']])
+            elif i == 4:
+                data.extend([x + 30 for x in mats['cost']])
+            else:
+                data.extend([x + 65 for x in mats['cost']])
+
+    colors = {'Good T matrices': 'green', 'Bad T matrices': 'red'}
+    palette = [colors[typ] for typ in ['Good T matrices', "Bad T matrices"]]
+    # create the boxplot with grouped boxes
+    plt.figure(figsize=(10, 14))
+    ax = sb.boxplot(x=categories, y=data, hue=types, palette=palette, showfliers=False)
+
+    # set y-axis ticks
+
+    # label the axes and adjust font size
+    ax.set_xlabel('Number of populations(n)', fontsize=26)
+    ax.set_ylabel('Estimated deviation from equations', fontsize=26)
+    ax.axvline(x=0.5, linestyle='--', color='gray', linewidth=1)
+    ax.axvline(x=1.5, linestyle='--', color='gray', linewidth=1)
+    ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=15)
+
+    # adjust font size of tick labels
+    ax.tick_params(axis='both', which='major', labelsize=22)
+    # show the plot
+    plt.show()
+
+
+def good_minimal_cost():
+    """
+    plots the average minimal cost of M matrices produced from good T matrices
+    """
+    sizes = np.array([[3], [4], [5]])
+    categories = np.repeat(sizes, 100)
+    data = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            data.append(np.min(mats['good_cost']))
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_xlabel('Number of populations(n)', fontsize=26)
+    fig.set_ylabel('Minimal cost', fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.show()
+
+
+def good_diameter_m():
+    """
+    plots the diameter of M matrices produced from good T matrices
+    """
+    sizes = np.array([[3], [4], [5]])
+    categories = np.repeat(sizes, 100)
+    data = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            data.append(diameter(mats['good_m']))
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_title('Diameter of M matrices', fontsize=28)
+    fig.set_xlabel('Number of populations(n)', fontsize=26)
+    fig.set_ylabel('Diameter', fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.savefig("Plots/good_diameter.svg")
+    plt.show()
+
+
+def good_diameter_t():
+    """
+     plots the diameter of good T matrices
+     """
+    sizes = np.array([[3], [4], [5]])
+    categories = np.repeat(sizes, 100)
+    data = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            data.append(diameter(mats['good_t']))
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_title('Diameter of good T matrices', fontsize=28)
+    fig.set_xlabel('Number of populations(n)', fontsize=26)
+    fig.set_ylabel('Diameter', fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.savefig("Plots/good_diameter_T.svg")
+    plt.show()
+
+
+def diameter_convergence(shape: int):
+    """
+    plot diameter convergence for good and bad T matrices
+    """
+    repeats = [i * 10 for i in range(0, 101)]
+    good_diam, bad_diam = [0], [0]
+    for n in repeats[1:]:
+        n_good_diams, n_bad_diams = [], []
+        for i in range(100):
+            file = open(f"new_pickles/{shape}X{shape}_transformation_{i + 1}", 'rb')
+            mats = pickle.load(file)
+            good_mats, bad_mats = mats['good_m'], mats['bad_m']
+            if len(good_mats) >= n:
+                n_good_diams.append(diameter(good_mats[0:n]))
+            if len(bad_mats) >= n:
+                n_bad_diams.append(diameter(bad_mats[0:n]))
+        good_diam.append(np.mean(n_good_diams))
+        bad_diam.append((np.mean(n_bad_diams)))
+    plt.plot(repeats, good_diam, color="green", label="Good T matrices")
+    plt.plot(repeats, bad_diam,  color="red", label=f"Bad T matrices")
+    plt.title(f'{shape}X{shape} diameter convergence')
+    plt.xlabel('Number of matrices')
+    plt.ylabel("Diameter")
+    plt.legend()
+    plt.savefig(f"Plots/{shape}X{shape}_diam_conv.svg")
+    plt.show()
 
 
 if __name__ == "__main__":
-    # store_transformations(shape=3, n_matrices=100, n_transformations=1000)
-    # store_transformations(shape=5, n_matrices=100, n_transformations=1000)
-    file = open("pickles/5X5_transformation_94",'rb')
-    mats = pickle.load(file)
-    print(np.round(mats['t'][3],2))
-    print(np.round(mats['m'][3],2))
-    # plots_1(100, 1000)
-    # start = time.time()
-    # plots_1(100, 1000, size=5)
-    # end = time.time()
-    # print(f"Running time is {end - start} seconds")
+    diameter_convergence(shape=3)
+# good_diameter_t()
+# good_diameter_m()
+# good_minimal_cost()
+# box_plot_pct()
+# box_plot_good_vs_bad()
+# store_transformations(shape=5, n_matrices=100, n_transformations=1000, dir_path='new_pickles')
+# store_transformations(shape=5, n_matrices=100, n_transformations=1000)
+# file = open("new_pickles/3X3_transformation_1", 'rb')
+# mats = pickle.load(file)
+# costs = mats['bad_cost']
+# print(mats['true_m'])
+# print(costs)
+# plots_1(100, 1000)
+# start = time.time()
+# plots_1(100, 1000, size=5)
+# end = time.time()
+# print(f"Running time is {end - start} seconds")

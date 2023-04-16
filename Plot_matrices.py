@@ -70,9 +70,10 @@ def add_matrices_to_plot(matrices: list[np.ndarray], names: list[str], fig: np.n
 
     """
     for k, mat in enumerate(matrices):
-        fig[k].imshow(mat, cmap="plasma")
+        im = fig[k].imshow(mat, cmap="Oranges")
         # create a colorbar
-        # ax[k].figure.colorbar(im, ax=ax)
+        # if k == 1:
+        #     im.figure.colorbar(im)
         # add labels for each cell
         for i in range(mat.shape[0]):
             for j in range(mat.shape[0]):
@@ -82,5 +83,5 @@ def add_matrices_to_plot(matrices: list[np.ndarray], names: list[str], fig: np.n
 
 
 if __name__ == "__main__":
-    # plot_transformations(size=3)
-    plot_5_transformations(generate_random_migration_mat(n=3))
+    plot_transformations(size=3)
+    #plot_5_transformations(generate_random_migration_mat(n=3))
