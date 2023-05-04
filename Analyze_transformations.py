@@ -7,7 +7,8 @@ from Migration import Migration
 import time
 import pickle
 import seaborn as sb
-from Helper_funcs import check_constraint, diameter
+import sys
+from Helper_funcs import check_constraint, diameter, matrix_distance, matrix_mean
 
 
 def analyze_t_matrices(f: np.ndarray, n=1000) -> list:
@@ -288,7 +289,7 @@ def diameter_convergence(shape: int):
         good_diam.append(np.mean(n_good_diams))
         bad_diam.append((np.mean(n_bad_diams)))
     plt.plot(repeats, good_diam, color="green", label="Good T matrices")
-    plt.plot(repeats, bad_diam,  color="red", label=f"Bad T matrices")
+    plt.plot(repeats, bad_diam, color="red", label=f"Bad T matrices")
     plt.title(f'{shape}X{shape} diameter convergence')
     plt.xlabel('Number of matrices')
     plt.ylabel("Diameter")
@@ -297,14 +298,102 @@ def diameter_convergence(shape: int):
     plt.show()
 
 
+def k_smallest_cost() -> None:
+    """ find 10% best costs out of good T matrices. costs are normalized"""
+    sizes = np.array([[3], [4], [5]])
+    categories = np.repeat(sizes, 100)
+    data = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"new_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            costs = np.array(mats['good_cost']) / (i ** 2 - i)
+            k = int(np.floor(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+            indices = np.argpartition(costs, k)
+            result = costs[indices[:k]]
+            data.append(np.mean(result))
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_xlabel('Number of populations(n)', fontsize=26)
+    fig.set_ylabel(f'Top 10% average cost (normalized)', fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.show()
+
+
+def plot_matrix_range(n: int):
+    file = open(f"new_pickles/{n}X{n}_transformation_52", 'rb')
+    mats = pickle.load(file)
+    costs = np.array(mats['good_cost']) / (n ** 2 - n)
+    M_mats = np.array(mats["good_m"])
+    k = int(np.ceil(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+    indices = np.argpartition(costs, k)
+    best_mats = M_mats[indices[:k]]
+    best_costs = costs[indices[:k]]
+    diam = diameter(best_mats)
+    best_mat = matrix_mean(best_mats)
+    fig, ax = plt.subplots(nrows=1, ncols=2)
+    print(diam)
+    matrices = [best_mat, mats["true_m"]]
+    names = ["Inferred matrix", "Real Matrix"]
+    for k in [0, 1]:
+        ax[k].imshow(matrices[k], cmap="Oranges")
+        for i in range(best_mat.shape[0]):
+            for j in range(best_mat.shape[1]):
+                ax[k].text(j, i, np.round(matrices[k][i, j], 2), ha="center", va="center", color="black")
+        ax[k].set_title(names[k])
+        ax[k].tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
+    fig.show()
+
+
+def inferred_mat_distance(which: str):
+    sizes = np.array([[3], [4], [5]])
+    categories = np.repeat(sizes, 100)
+    data = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"newest_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            costs = np.array(mats['good_cost']) / (i ** 2 - i)
+            M_mats = np.array(mats["good_m"])
+            k = int(np.ceil(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+            indices = np.argpartition(costs, k)
+            best_mats = M_mats[indices[:k]]
+            best_costs = costs[indices[:k]]
+            if which == "best":
+                best_mat = best_mats[np.argmin(best_costs)]
+            elif which == "random":
+                best_mat = generate_random_migration_mat(i)
+            else:
+                best_mat = matrix_mean(best_mats)
+            true_mat = mats["true_m"]
+            data.append(matrix_distance(best_mat, true_mat))
+    if which == "best":
+        name = 'Distance between true matrix and best matrix'
+    elif which == "random":
+        name = 'Distance between true matrix and random matrix'
+    else:
+        name = 'Distance between true matrix and average matrix'
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_xlabel('Number of populations(n)', fontsize=26)
+    fig.set_ylabel(name, fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.show()
+
+
 if __name__ == "__main__":
-    diameter_convergence(shape=3)
+    inferred_mat_distance(which="avg")
+ # plot_matrix_range(4)
+# k_smallest_cost()
+# diameter_convergence(shape=3)
 # good_diameter_t()
 # good_diameter_m()
 # good_minimal_cost()
 # box_plot_pct()
 # box_plot_good_vs_bad()
-# store_transformations(shape=5, n_matrices=100, n_transformations=1000, dir_path='new_pickles')
+#store_transformations(shape=int(sys.argv[1]), n_matrices=100, n_transformations=1000, dir_path='new_pickles')
 # store_transformations(shape=5, n_matrices=100, n_transformations=1000)
 # file = open("new_pickles/3X3_transformation_1", 'rb')
 # mats = pickle.load(file)

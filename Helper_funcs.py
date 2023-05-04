@@ -73,3 +73,13 @@ def diameter(mats: list) -> float:
         for j in range(i):
             max_diam = max(max_diam, matrix_distance(mats[i], mats[j]))
     return max_diam
+
+
+def matrix_mean(mats: list) -> np.ndarray:
+    """
+    returns matrix which is the mean of a set of matrices, meaning each entry of the matrix is the mean of the entry
+    across all matrices.
+    :param mats: a set of matrices.
+    :return: matrix mean.
+    """
+    return np.sum(mats, axis=0) / len(mats)

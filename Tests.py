@@ -257,11 +257,18 @@ def test_produce_coalescence_from_fst():
     T = F_1.produce_coalescence(bounds=(0, np.inf))
     print(T)
 
+def test_motif_16():
+   # m = np.array([[0,0.1,0,0.1],[0.1,0,0.1,0],[0,0.1,0,0.1],[0.1,0,0.1,0]])
+    m = np.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0]])
+    M = Migration(m)
+    print(m)
+    print(M.produce_coalescence())
 
 if __name__ == "__main__":
     # test_produce_coalescence()
     # test_produce_fst()
     # test_MtoF()
-    test_produce_migration()
+    # test_produce_migration()
+    test_motif_16()
     #test_produce_coalescence_from_fst()
 

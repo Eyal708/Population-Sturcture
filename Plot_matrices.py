@@ -82,6 +82,8 @@ def add_matrices_to_plot(matrices: list[np.ndarray], names: list[str], fig: np.n
         fig[k].tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
 
 
+
+
 if __name__ == "__main__":
-    plot_transformations(size=3)
+    plot_transformations(size=5)
     #plot_5_transformations(generate_random_migration_mat(n=3))

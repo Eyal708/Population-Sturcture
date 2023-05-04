@@ -29,7 +29,7 @@ class Coalescence:
                 F_mat[i, j], F_mat[j, i] = F_i_j, F_i_j
         return F_mat
 
-    def produce_migration(self, bounds=(0, np.inf)) -> tuple:
+    def produce_migration(self, bounds=(0, 2)) -> tuple:
         """
         produce and return the migration matrix induced by the coefficient matrix A(which is induced by T).
         :param bounds: bounds for each individual variable. default is 0 <= x < inf. bounds should be given as a tuple

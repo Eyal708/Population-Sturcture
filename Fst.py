@@ -27,7 +27,8 @@ class Fst:
             x0 = np.random.uniform(low=0, high=2*n, size=(n + nc2, ))
         T = np.zeros((n, n))
         f_values = self.matrix[np.triu_indices(n, 1)]
-        x = least_squares(compute_coalescence, x0=x0, args=(f_values, n), bounds=(bounds[0], bounds[1])).x
+        solution = least_squares(compute_coalescence, x0=x0, args=(f_values, n), bounds=(bounds[0], bounds[1]))
+        x = solution.x
         np.fill_diagonal(T, x[nc2:])
         T[np.triu_indices(n, 1)] = x[0:nc2]
         T[np.tril_indices(n, -1)] = x[0:nc2]
