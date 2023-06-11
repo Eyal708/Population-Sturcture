@@ -4,6 +4,9 @@ from Migration import Migration
 from Coalescence import Coalescence
 from Fst import Fst
 from colorama import Fore, init
+from Helper_funcs import matrix_distance, diameter, check_constraint, \
+    find_components, split_migration_matrix, split_migration
+from Transformation import m_to_f, m_to_t
 
 init(autoreset=True)
 
@@ -257,18 +260,33 @@ def test_produce_coalescence_from_fst():
     T = F_1.produce_coalescence(bounds=(0, np.inf))
     print(T)
 
+
 def test_motif_16():
-   # m = np.array([[0,0.1,0,0.1],[0.1,0,0.1,0],[0,0.1,0,0.1],[0.1,0,0.1,0]])
+    # m = np.array([[0,0.1,0,0.1],[0.1,0,0.1,0],[0,0.1,0,0.1],[0.1,0,0.1,0]])
     m = np.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0]])
     M = Migration(m)
     print(m)
     print(M.produce_coalescence())
 
+
+def test_split_migration():
+    m_1 = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+    m_2 = np.array([[0, 0, 0, 0.1], [0, 0, 0.1, 0], [0, 0.1, 0, 0], [0.1, 0, 0, 0]])  # motif 11
+    matrices = [m_1, m_2]
+    for matrix in matrices:
+        result = split_migration(matrix)
+        print(f"Components:\n{result[1]}")
+        for sub_mat in result[0]:
+            if sub_mat.shape[0] > 1:
+                print(m_to_t(sub_mat))
+                print(m_to_f(sub_mat))
+
+
 if __name__ == "__main__":
+    test_split_migration()
     # test_produce_coalescence()
     # test_produce_fst()
     # test_MtoF()
     # test_produce_migration()
-    test_motif_16()
-    #test_produce_coalescence_from_fst()
-
+    # test_motif_16()
+    # test_produce_coalescence_from_fst()

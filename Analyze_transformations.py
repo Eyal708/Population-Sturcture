@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import matplotlib.pyplot as plt
 from Matrix_generator import generate_random_migration_mat, generate_pseudo_random_fst_mat
@@ -149,16 +151,17 @@ def box_plot_pct():
     data = []
     for i in range(3, 6):
         for j in range(100):
-            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            file = open(f"fixed_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
             mats = pickle.load(file)
-            num_t = len(mats['t'])
+            num_t = len(mats['good_t'])
             data.append(num_t / 1000 * 100)
     plt.figure(figsize=(10, 14))
     fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
-    fig.set_xlabel('Number of populations(n)', fontsize=26)
-    fig.set_ylabel('Good T matrices(%)', fontsize=26)
-    fig.tick_params(axis='both', which='major', labelsize=22)
+    fig.set_xlabel('Number of populations', fontsize=36)
+    fig.set_ylabel('Good T matrices(%)', fontsize=36)
+    fig.tick_params(axis='both', which='major', labelsize=26)
     # fig.set_yticks(range(0, 50, 10))
+    plt.savefig("NewPlots/boxplot_pct.svg")
     plt.show()
 
 
@@ -168,21 +171,17 @@ def box_plot_good_vs_bad():
     types = []
     for i in range(3, 6):
         for j in range(100):
-            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            file = open(f"fixed_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
             mats = pickle.load(file)
-            types.extend(['Good T matrices'] * len(mats['t']))
-            types.extend(['Bad T matrices'] * len(mats['t']))
-            for k in range(2 * len(mats['t'])):
-                categories.append(i)
-            data.extend(mats['cost'])
-            if i == 3:
-                data.extend([x + 6 for x in mats['cost']])
-            elif i == 4:
-                data.extend([x + 30 for x in mats['cost']])
-            else:
-                data.extend([x + 65 for x in mats['cost']])
+            good_cost = np.array(mats['good_cost']) / (i ** 2 - i)  # normalize costs
+            bad_cost = np.array(mats['bad_cost']) / (i ** 2 - i)  # normalize costs
+            types.extend(['Good T matrices'] * len(good_cost))
+            data.extend(good_cost)
+            types.extend(['Bad T matrices'] * len(bad_cost))
+            data.extend(bad_cost)
+            categories.extend([i] * (len(good_cost) + len(bad_cost)))
 
-    colors = {'Good T matrices': 'green', 'Bad T matrices': 'red'}
+    colors = {'Good T matrices': 'lightgreen', 'Bad T matrices': 'tomato'}
     palette = [colors[typ] for typ in ['Good T matrices', "Bad T matrices"]]
     # create the boxplot with grouped boxes
     plt.figure(figsize=(10, 14))
@@ -191,14 +190,54 @@ def box_plot_good_vs_bad():
     # set y-axis ticks
 
     # label the axes and adjust font size
-    ax.set_xlabel('Number of populations(n)', fontsize=26)
-    ax.set_ylabel('Estimated deviation from equations', fontsize=26)
+    ax.set_xlabel('Number of populations', fontsize=36)
+    ax.set_ylabel('LS cost', fontsize=36)
     ax.axvline(x=0.5, linestyle='--', color='gray', linewidth=1)
     ax.axvline(x=1.5, linestyle='--', color='gray', linewidth=1)
-    ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=15)
+    ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=22)
 
     # adjust font size of tick labels
-    ax.tick_params(axis='both', which='major', labelsize=22)
+    ax.tick_params(axis='both', which='major', labelsize=26)
+    plt.savefig("NewPlots/boxplot_good_VS_bad.svg")
+    # show the plot
+    plt.show()
+
+
+def box_plot_good_vs_distance():
+    categories = []
+    data = []
+    types = []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"fixed_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            true_m = mats["true_m"]
+            good_d = [matrix_distance(mat, true_m) for mat in mats["good_m"]]
+            bad_d = [matrix_distance(mat, true_m) for mat in mats["bad_m"]]
+            types.extend(['Good M matrices'] * len(good_d))
+            data.extend(good_d)
+            types.extend(['Bad M matrices'] * len(bad_d))
+            data.extend(bad_d)
+            categories.extend([i] * (len(good_d) + len(bad_d)))
+
+    colors = {'Good M matrices': 'lightgreen', 'Bad M matrices': 'orangered'}
+    palette = [colors[typ] for typ in ['Good M matrices', "Bad M matrices"]]
+    # create the boxplot with grouped boxes
+    plt.figure(figsize=(10, 14))
+    ax = sb.boxplot(x=categories, y=data, hue=types, palette=palette, showfliers=False)
+
+    # set y-axis ticks
+
+    # label the axes and adjust font size
+    ax.set_xlabel('Number of populations', fontsize=36)
+    ax.set_ylabel('Distance from ground truth', fontsize=36)
+    ax.axvline(x=0.5, linestyle='--', color='gray', linewidth=1)
+    ax.axvline(x=1.5, linestyle='--', color='gray', linewidth=1)
+    ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=22)
+
+    # adjust font size of tick labels
+    ax.tick_params(axis='both', which='major', labelsize=26)
+    plt.savefig("NewPlots/good_VS_bad_distance_all.svg")
     # show the plot
     plt.show()
 
@@ -233,9 +272,14 @@ def good_diameter_m():
     data = []
     for i in range(3, 6):
         for j in range(100):
-            file = open(f"pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            file = open(f"fixed_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
             mats = pickle.load(file)
-            data.append(diameter(mats['good_m']))
+            costs = np.array(mats['bad_cost']) / (i ** 2 - i)
+            M_mats = np.array(mats["bad_m"])
+            k = min(100,len(M_mats)-1) #int(np.ceil(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+            indices = np.argpartition(costs, k)
+            best_mats = M_mats[indices[:k]]
+            data.append(diameter(best_mats))
     plt.figure(figsize=(10, 14))
     fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
     fig.set_title('Diameter of M matrices', fontsize=28)
@@ -243,7 +287,7 @@ def good_diameter_m():
     fig.set_ylabel('Diameter', fontsize=26)
     fig.tick_params(axis='both', which='major', labelsize=22)
     # fig.set_yticks(range(0, 50, 10))
-    plt.savefig("Plots/good_diameter.svg")
+    # plt.savefig("NewPlots/10%_good_diameter.svg")
     plt.show()
 
 
@@ -322,7 +366,7 @@ def k_smallest_cost() -> None:
 
 
 def plot_matrix_range(n: int):
-    file = open(f"new_pickles/{n}X{n}_transformation_52", 'rb')
+    file = open(f"fixed_pickles/{n}X{n}_transformation_2", 'rb')
     mats = pickle.load(file)
     costs = np.array(mats['good_cost']) / (n ** 2 - n)
     M_mats = np.array(mats["good_m"])
@@ -346,54 +390,131 @@ def plot_matrix_range(n: int):
     fig.show()
 
 
-def inferred_mat_distance(which: str):
-    sizes = np.array([[3], [4], [5]])
-    categories = np.repeat(sizes, 100)
+def inferred_mat_distance(which: str, good=True):
+    # sizes = np.array([[3], [4], [5]])
+    categories = []
     data = []
     for i in range(3, 6):
         for j in range(100):
-            file = open(f"newest_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            file = open(f"Fixed_pickles_constraints/{i}X{i}_transformation_{j + 1}", 'rb')
             mats = pickle.load(file)
-            costs = np.array(mats['good_cost']) / (i ** 2 - i)
-            M_mats = np.array(mats["good_m"])
+            if good:
+                costs = np.array(mats['good_cost']) / (i ** 2 - i)
+                M_mats = np.array(mats["good_m"])
+            else:
+                costs = np.array(mats['bad_cost']) / (i ** 2 - i)
+                M_mats = np.array(mats["bad_m"])
+
             k = int(np.ceil(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
             indices = np.argpartition(costs, k)
             best_mats = M_mats[indices[:k]]
             best_costs = costs[indices[:k]]
             if which == "best":
+                if len(best_mats) == 0:
+                    break
                 best_mat = best_mats[np.argmin(best_costs)]
             elif which == "random":
                 best_mat = generate_random_migration_mat(i)
             else:
+                if len(best_mats) == 0:
+                    break
                 best_mat = matrix_mean(best_mats)
             true_mat = mats["true_m"]
             data.append(matrix_distance(best_mat, true_mat))
-    if which == "best":
-        name = 'Distance between true matrix and best matrix'
-    elif which == "random":
-        name = 'Distance between true matrix and random matrix'
-    else:
-        name = 'Distance between true matrix and average matrix'
+            categories.append(i)
+    name = "Distance from ground truth"
     plt.figure(figsize=(10, 14))
+    # if not good:
+    #     plt.title("Analysis for bad T matrices", fontsize=30)
+    # else:
+    #     plt.title("Analysis for good T matrices", fontsize=30)
     fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
-    fig.set_xlabel('Number of populations(n)', fontsize=26)
-    fig.set_ylabel(name, fontsize=26)
-    fig.tick_params(axis='both', which='major', labelsize=22)
+    fig.set_xlabel('Number of populations', fontsize=36)
+    fig.set_ylabel(name, fontsize=36)
+    fig.set_yticks([0, 0.2, 0.4, 0.6, 0.8,1,1.2, 1.4])
+    fig.tick_params(axis='both', which='major', labelsize=26)
     # fig.set_yticks(range(0, 50, 10))
+    plt.savefig(f"NewPlots/Only_good_distance_{which}.svg")
+    plt.show()
+
+
+def compare_good_bad(which: str):
+    categories, data, types = [], [], []
+    for i in range(3, 6):
+        for j in range(100):
+            file = open(f"fixed_pickles/{i}X{i}_transformation_{j + 1}", 'rb')
+            mats = pickle.load(file)
+            good_costs = np.array(mats['good_cost']) / (i ** 2 - i)
+            good_M_mats = np.array(mats["good_m"])
+            bad_costs = np.array(mats['bad_cost']) / (i ** 2 - i)
+            bad_M_mats = np.array(mats["bad_m"])
+            good_k = int(np.ceil(good_costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+            good_indices = np.argpartition(good_costs, good_k)
+            good_best_mats = good_M_mats[good_indices[:good_k]]
+            good_best_costs = good_costs[good_indices[:good_k]]
+            bad_k = int(np.ceil(bad_costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+            bad_indices = np.argpartition(bad_costs, bad_k)
+            bad_best_mats = bad_M_mats[bad_indices[:bad_k]]
+            bad_best_costs = bad_costs[bad_indices[:bad_k]]
+            true_mat = mats["true_m"]
+            if len(good_best_mats) > 0:
+                types.append("Good T matrices")
+                categories.append(i)
+                if which == "best":
+                    best_mat = good_best_mats[np.argmin(good_best_costs)]
+                else:
+                    best_mat = matrix_mean(good_best_mats)
+                data.append(matrix_distance(best_mat, true_mat))
+            if len(bad_best_mats) > 0:
+                types.append("Bad T matrices")
+                categories.append(i)
+                if which == "best":
+                    best_mat = bad_best_mats[np.argmin(bad_best_costs)]
+                else:
+                    best_mat = matrix_mean(bad_best_mats)
+                data.append(matrix_distance(best_mat, true_mat))
+
+    colors = {'Good T matrices': 'green', 'Bad T matrices': 'red'}
+    palette = [colors[typ] for typ in ['Good T matrices', "Bad T matrices"]]
+    # create the boxplot with grouped boxes
+    plt.figure(figsize=(10, 14))
+    ax = sb.boxplot(x=categories, y=data, hue=types, palette=palette, showfliers=False)
+
+    # set y-axis ticks
+
+    # label the axes and adjust font size
+    ax.set_xlabel('Number of populations(n)', fontsize=36)
+    ax.set_ylabel(f'Distance of true matrix from {which} matrix', fontsize=36)
+    ax.axvline(x=0.5, linestyle='--', color='gray', linewidth=1)
+    ax.axvline(x=1.5, linestyle='--', color='gray', linewidth=1)
+    ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=22)
+
+    # adjust font size of tick labels
+    ax.tick_params(axis='both', which='major', labelsize=26)
+    # show the plot
+    plt.savefig(f"NewPlots/good_VS_bad_distance_{which}.svg")
     plt.show()
 
 
 if __name__ == "__main__":
-    inferred_mat_distance(which="avg")
- # plot_matrix_range(4)
+    # box_plot_pct()
+    box_plot_good_vs_bad()
+    # box_plot_good_vs_distance()
+    # compare_good_bad(which="best")
+    # compare_good_bad(which="average")
+    # inferred_mat_distance(which="avg", good=False)
+    # inferred_mat_distance(which="avg")
+    # inferred_mat_distance(which="best", good=False)
+    # inferred_mat_distance(which="best")
+    # inferred_mat_distance(which="avg")
+    # inferred_mat_distance(which="random")
+    # plot_matrix_range(5)
 # k_smallest_cost()
 # diameter_convergence(shape=3)
 # good_diameter_t()
-# good_diameter_m()
+ #good_diameter_m()
 # good_minimal_cost()
-# box_plot_pct()
-# box_plot_good_vs_bad()
-#store_transformations(shape=int(sys.argv[1]), n_matrices=100, n_transformations=1000, dir_path='new_pickles')
+# store_transformations(shape=int(sys.argv[1]), n_matrices=100, n_transformations=1000, dir_path='new_pickles')
 # store_transformations(shape=5, n_matrices=100, n_transformations=1000)
 # file = open("new_pickles/3X3_transformation_1", 'rb')
 # mats = pickle.load(file)
