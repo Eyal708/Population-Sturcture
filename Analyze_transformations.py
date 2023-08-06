@@ -276,7 +276,7 @@ def good_diameter_m():
             mats = pickle.load(file)
             costs = np.array(mats['bad_cost']) / (i ** 2 - i)
             M_mats = np.array(mats["bad_m"])
-            k = min(100,len(M_mats)-1) #int(np.ceil(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
+            k = min(100, len(M_mats) - 1)  # int(np.ceil(costs.shape[0] / 100 * 10))  # find the 10% lowest cost
             indices = np.argpartition(costs, k)
             best_mats = M_mats[indices[:k]]
             data.append(diameter(best_mats))
@@ -431,7 +431,7 @@ def inferred_mat_distance(which: str, good=True):
     fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
     fig.set_xlabel('Number of populations', fontsize=36)
     fig.set_ylabel(name, fontsize=36)
-    fig.set_yticks([0, 0.2, 0.4, 0.6, 0.8,1,1.2, 1.4])
+    fig.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4])
     fig.tick_params(axis='both', which='major', labelsize=26)
     # fig.set_yticks(range(0, 50, 10))
     plt.savefig(f"NewPlots/Only_good_distance_{which}.svg")
@@ -496,9 +496,32 @@ def compare_good_bad(which: str):
     plt.show()
 
 
+def compare_methods():
+    """
+    Comapre Xiran's method to my method in terms of migration matrix diameter.
+    """
+    file = open(f"compare_methods_pickles/3X3_data", 'rb')
+    data = pickle.load(file)
+    print(len(data))
+    print(data)
+    categories = np.tile(['X', 'E'], 10)
+    print(len(categories))
+    print(categories)
+    plt.figure(figsize=(10, 14))
+    fig = sb.boxplot(x=categories, y=data, showfliers=False, palette='Set2')
+    fig.set_title('Comparing diameter between methods (3X3 matrices)', fontsize=28)
+    fig.set_xlabel('Method', fontsize=26)
+    fig.set_ylabel('Diameter of migration matrices', fontsize=26)
+    fig.tick_params(axis='both', which='major', labelsize=22)
+    # fig.set_yticks(range(0, 50, 10))
+    plt.savefig("NewPlots/compare_methods_diameter_3X3.svg")
+    plt.show()
+
+
 if __name__ == "__main__":
+    compare_methods()
     # box_plot_pct()
-    box_plot_good_vs_bad()
+    # box_plot_good_vs_bad()
     # box_plot_good_vs_distance()
     # compare_good_bad(which="best")
     # compare_good_bad(which="average")
@@ -512,7 +535,7 @@ if __name__ == "__main__":
 # k_smallest_cost()
 # diameter_convergence(shape=3)
 # good_diameter_t()
- #good_diameter_m()
+# good_diameter_m()
 # good_minimal_cost()
 # store_transformations(shape=int(sys.argv[1]), n_matrices=100, n_transformations=1000, dir_path='new_pickles')
 # store_transformations(shape=5, n_matrices=100, n_transformations=1000)

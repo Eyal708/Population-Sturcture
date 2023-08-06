@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize import least_squares, minimize
-from Helper_funcs import compute_coalescence, comb, constraint_generator
+from Helper_funcs import compute_coalescence, comb, constraint_generator, f_to_m, cons_migration_constraint_generator
 
 
 class Fst:
@@ -65,3 +65,26 @@ class Fst:
         # T[np.triu_indices(n, 1)] = x[0:nc2]
         # T[np.tril_indices(n, -1)] = x[0:nc2]
         return T
+
+    def produce_migration(self, x0=None, bounds=(0, 2), conservative=True) -> tuple:
+        n, nc2 = self.shape, comb(self.shape, 2)
+        if x0 is None:
+            x0 = np.random.uniform(low=0, high=2 * n, size=(n ** 2,))
+        M = np.zeros((n, n))
+        f_values = self.matrix.flatten()
+        constraints = None
+        if conservative:
+            constraints = []
+            for i in range(n):
+                constraint = cons_migration_constraint_generator(n, i)
+                constraints.append({"type": "eq", "fun": constraint})
+        bnds = (n ** 2 - n) * [(bounds[0], bounds[1])] + n * [(0, np.inf)]
+        solution = minimize(f_to_m, x0=x0, args=(f_values, n), method="SLSQP",
+                            bounds=bnds, constraints=constraints)
+        x = solution.x
+        for i in range(n):
+            start_ind = i * (n - 1)
+            M[i, 0:i] = x[start_ind:start_ind + i]
+            M[i, i + 1:n] = x[start_ind + i:start_ind + n - 1]
+        return M, solution
+# 2.70993953

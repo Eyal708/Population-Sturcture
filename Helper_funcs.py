@@ -40,6 +40,42 @@ def compute_coalescence(t: np.ndarray, f: np.ndarray, n: int) -> float:
     return np.linalg.norm(eqs_lst)
 
 
+def f_to_m(u: np.ndarray, f: np.ndarray, n: int) -> float:
+    """
+    Function to minimize in order to solve F->M directly (Xiran's paper).
+    :param f: vector of Fst values (parameters) of size nC2.
+    :param u: vector of unknown T and M values of size n^2.
+    :param n: number of populations.
+    :return: value of function at point u.
+    """
+    equation_lst = []
+    m = u[:n ** 2 - n]  # M values
+    t = u[n ** 2 - n:]  # T values
+    for i in range(n):
+        incoming_migrants_i = m[(n - 1) * i: (n - 1) * i + n - 1]  # only unknowns of kind M_{i,k}
+        m_i = np.sum(incoming_migrants_i)
+        other_t = np.concatenate((t[:i], t[i + 1:]))  # only unknowns of kind T_{k,k} where k!=i
+        f_i_values = np.concatenate((f[n * i: n * i + i],
+                                     f[n * i + 1 + i: n * i + n]))  # only f value of kind F_{i,k} where k!=i
+        ones = np.ones(n - 1)
+        f_i_vector = (ones + f_i_values) / (ones - f_i_values)
+        equation_lst.append(((1 + m_i) * t[i] - 0.5 * (incoming_migrants_i @ ((other_t + t[i]) * f_i_vector))) - 1)
+        for j in range(i):
+            incoming_migrants_j = m[(n - 1) * j: (n - 1) * j + n - 1]
+            m_j = np.sum(incoming_migrants_j)
+            f_j_values = np.concatenate((f[n * j: n * j + i],
+                                         f[n * j + 1 + i: n * j + n]))
+            f_i_new_values = np.concatenate((f[n * i: n * i + j],
+                                             f[n * i + 1 + j: n * i + n]))
+            f_j_vector = (ones + f_j_values) / (ones - f_j_values)
+            f_i_new_vector = (ones + f_i_new_values) / (ones - f_i_new_values)
+            t_vals_no_j = np.concatenate((t[:j], t[j + 1:]))
+            equation_lst.append(0.25 * (((m_i + m_j) * (t[i] + t[j]) * ((1 + f[(n * i + j)]) / (1 - f[(n * i + j)]))) -
+                                        (incoming_migrants_i @ ((other_t + t[j]) * f_j_vector))
+                                        - (incoming_migrants_j @ ((t_vals_no_j + t[i]) * f_i_new_vector))) - 1)
+    return np.linalg.norm(equation_lst)
+
+
 def constraint_generator(i: int, j: int) -> callable:
     """
     creates and returns a constraint function for the minimize algorithm used in F->T.
@@ -48,6 +84,26 @@ def constraint_generator(i: int, j: int) -> callable:
 
     def constraint(x: np.ndarray):
         return x[i] - x[j]
+
+    return constraint
+
+
+def cons_migration_constraint_generator(n: int, i: int) -> callable:
+    """
+    creates and returns a constraint function for the minimize algorithm used to directly solve F->M. this constraints
+    are to assure conservative migration.
+    :param n: total number of populations
+    :param i: population number
+    :return: A callable which is the conservative migration constraint for population i
+    """
+
+    def constraint(x: np.ndarray):
+        m_values = x[:n ** 2 - n]
+        indices = np.vstack(np.indices((n, n))).reshape(2, -1).T
+        mask = indices[:, 0] != indices[:, 1]  # Off-diagonal mask
+        m = np.zeros((n, n))
+        m[tuple(indices[mask].T)] = m_values
+        return np.sum(m[i, :]) - np.sum(m[:, i])
 
     return constraint
 
@@ -61,6 +117,14 @@ def check_constraint(t: np.ndarray) -> bool:
     min_indices = t.argmin(axis=1)
     diag_indices = np.diag_indices(t.shape[0])[0]
     return not np.any(min_indices != diag_indices)
+
+
+def check_conservative(m: np.ndarray):
+    m = np.round(m, decimals=2)
+    for i in range(m.shape[0]):
+        if np.sum(m[i, :]) != np.sum(m[:, i]):
+            return False
+    return True
 
 
 def matrix_distance(a: np.ndarray, b: np.ndarray) -> float:
@@ -100,7 +164,7 @@ def matrix_mean(mats: list) -> np.ndarray:
 
 def find_components(matrix: np.ndarray) -> dict:
     """
-    Find connected components in a connected graph represented by adjacency matrix.
+    Find connected components in a directed graph represented by adjacency matrix.
     :param matrix: adjacency matrix representing a directed graph
     :return:something
     """
@@ -165,7 +229,7 @@ def reassemble_matrix(sub_matrices: list, connected_components: list, which: str
     """
     Reassembles an Fst/Coalescence matrix according to sub-matrices and the connected components.
     :param sub_matrices: The sub matrices from which to assemble the matrix. A list of 2-D numpy arrays.
-    :param connected_components: A list lists, where each list is the connected components. Inidcates how the matrix
+    :param connected_components: A list of lists, where each list is the connected components. Inidcates how the matrix
     should be assembled.
     :param which: Either "fst" or "coalescence". Indicated whether the assembled matrix is an Fst matrix or a
     coalescence matrix. This is important for initialization of the returned matrix.
@@ -182,4 +246,3 @@ def reassemble_matrix(sub_matrices: list, connected_components: list, which: str
         adjacency_matrix[np.ix_(indices, indices)] = sub_matrix
 
     return adjacency_matrix
-

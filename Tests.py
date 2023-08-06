@@ -5,8 +5,9 @@ from Coalescence import Coalescence
 from Fst import Fst
 from colorama import Fore, init
 from Helper_funcs import matrix_distance, diameter, check_constraint, \
-    find_components, split_migration_matrix, split_migration
+    find_components, split_migration_matrix, split_migration, check_conservative
 from Transformation import m_to_f, m_to_t
+from Matrix_generator import generate_pseudo_random_fst_mat
 
 init(autoreset=True)
 
@@ -282,8 +283,68 @@ def test_split_migration():
                 print(m_to_f(sub_mat))
 
 
+def check_xiran_sol():
+    # f = generate_pseudo_random_fst_mat(5)
+    # F = Fst(f)
+    # print(np.round(F.produce_migration(), 2))
+    # From Xiran's paper
+    f_2 = np.array([[0, 0.12, 0.14, 0.09], [0.12, 0, 0.11, 0.08], [0.14, 0.11, 0, 0.09], [0.09, 0.08, 0.09, 0]])
+    F = Fst(f_2)
+    cons, not_cons = 0, 0
+    min_fun = np.inf
+    best_mat = None
+    best_sol = None
+    for i in range(1000):
+        solution = F.produce_migration(conservative=False)
+        mat = solution[0]
+        cur_fun = solution[1].fun
+        if cur_fun < min_fun:
+            min_fun = cur_fun
+            best_mat = mat
+            best_sol = solution[1]
+        if check_conservative(mat):
+            cons += 1
+        else:
+            not_cons += 1
+
+    print(best_mat)
+    print(min_fun)
+    print(best_sol)
+    print(check_conservative(best_mat))
+    print(f"Number of conservative matrices: {cons}")
+    print(f"Number of not conservative matrices: {not_cons}")
+    # f_2 = generate_pseudo_random_fst_mat(4)
+    # F_2 = Fst(f_2)
+    # min_fun = np.inf
+    # best_m = None
+    # for i in range(100):
+    #     solution = F_2.produce_migration()
+    #     print(solution[1].fun)
+    #     M = Migration(solution[0])
+    #     t = M.produce_coalescence()
+    #     T = Coalescence(t)
+    #     inferred_f = T.produce_fst()
+    #     print(f"Inferred Migration{solution[0]}")
+    #     print(f"Inferred Fst according to inferred migration {inferred_f}")
+    #     print(
+    #         f"Inferred Fst is close to original Fst up to 10^-6 tolerance: {np.array_equal(np.round(inferred_f, 6), np.round(f_2, 6))}")
+    #     print(
+    #         f"Inferred Fst is close to original Fst up to 10^-5 tolerance: {np.array_equal(np.round(inferred_f, 5), np.round(f_2, 5))}")
+    #     print(
+    #         f"Inferred Fst is close to original Fst up to 10^-4 tolerance: {np.array_equal(np.round(inferred_f, 4), np.round(f_2, 4))}")
+    #     print(
+    #         f"Inferred Fst is close to original Fst up to 10^-3 tolerance: {np.array_equal(np.round(inferred_f, 3), np.round(f_2, 3))}")
+    #     if solution[1].fun < min_fun:
+    #         min_fun = solution[1].fun
+    #         best_m = solution[0]
+    # print(f"fst matrix is {f_2}")
+    # print(f"Migration matrix is:{np.round(best_m, 2)}")
+    # print(f"Value of target function at solution is: {min_fun}")
+
+
 if __name__ == "__main__":
-    test_split_migration()
+    check_xiran_sol()
+    # test_split_migration()
     # test_produce_coalescence()
     # test_produce_fst()
     # test_MtoF()

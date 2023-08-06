@@ -32,7 +32,7 @@ class Coalescence:
     def produce_migration(self, bounds=(0, 2)) -> tuple:
         """
         produce and return the migration matrix induced by the coefficient matrix A(which is induced by T).
-        :param bounds: bounds for each individual variable. default is 0 <= x < inf. bounds should be given as a tuple
+        :param bounds: bounds for each individual variable. default is 0 < x < 2. bounds should be given as a tuple
         of 2 arrays of size n**2-n (where n is the number of populations). first array represents lower bounds, second
         array represents upper bounds. if a tuple with 2 scalars is given instead, they will be the bounds for each
         variable.
