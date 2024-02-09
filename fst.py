@@ -1,9 +1,16 @@
 import numpy as np
-from scipy.optimize import least_squares, minimize
-from Helper_funcs import compute_coalescence, comb, constraint_generator, f_to_m, cons_migration_constraint_generator
+from scipy.optimize import minimize
+from helper_funcs import compute_coalescence, comb, constraint_generator, f_to_m, cons_migration_constraint_generator
 
 
 class Fst:
+    """
+    A class that represents a Fst matrix and provides methods to produce corresponding coalescence and migration
+    matrices.
+    The production of the coalescence matrix is according to Slatkin's 1991 paper.
+    The production of the migration matrix is according to Wilkinson-Herbot's 2003 paper, and Xiran Liu's 2019 paper.
+    """
+
     def __init__(self, matrix: np.ndarray) -> None:
         """
         Initialize Fst matrix object
@@ -12,16 +19,18 @@ class Fst:
         self.matrix = matrix
         self.shape = matrix.shape[0]
 
-    def produce_coalescence(self, x0=None, constraint=False, bounds=(0, np.inf)) -> np.ndarray:
+    def produce_coalescence(self, x0=None, constraint=False, bounds=(0, np.inf)) -> tuple:
         """
         generates a possible corresponding coalescence times matrix and returns it.
+        Solves Slatkin's equations using a numerical solver.
+        :param x0: initial guess for the variables, default is a random vector with bounds (0,2*n), where n is the
+                   size of the matrix (number of populations).
         :param constraint: indicated whether the T matrix produced should be 'good'. default is False
         :param bounds: bounds for each variable T(i,j), default is (0, inf). bounds should be a tuple of two arrays,
-        first is lower bounds for each variable, second is upper bounds for each variable. If bounds is a tuple of
-        two scalars, the same bounds are applied for each variable.
-        :param x0: initial guess for the variables, default is a random vector with bounds (0,2*n), where n is the
-        size of the matrix (number of populations).
-        :return: A possible corresponding Coalescence time matrix- T.
+                       first is lower bounds for each variable, second is upper bounds for each variable.
+                       If bounds is a tuple of two scalars, the same bounds are applied for each variable.
+        :return: A tuple: (A possible corresponding Coalescence time matrix- T, details about
+                          the solution of the numerical solver).
         """
         n, nc2 = self.shape, comb(self.shape, 2)
         if x0 is None:
@@ -42,19 +51,6 @@ class Fst:
                 if col == n:  # move to next row
                     row += 1
                     col = row + 1
-        # constraints = [{'type': 'ineq', 'fun': lambda x: x[0] - x[6]},
-        #                {'type': 'ineq', 'fun': lambda x: x[0] - x[7]},
-        #                {'type': 'ineq', 'fun': lambda x: x[1] - x[6]},
-        #                {'type': 'ineq', 'fun': lambda x: x[1] - x[8]},
-        #                {'type': 'ineq', 'fun': lambda x: x[2] - x[6]},
-        #                {'type': 'ineq', 'fun': lambda x: x[2] - x[9]},
-        #                {'type': 'ineq', 'fun': lambda x: x[3] - x[7]},
-        #                {'type': 'ineq', 'fun': lambda x: x[3] - x[8]},
-        #                {'type': 'ineq', 'fun': lambda x: x[4] - x[7]},
-        #                {'type': 'ineq', 'fun': lambda x: x[4] - x[9]},
-        #                {'type': 'ineq', 'fun': lambda x: x[5] - x[8]},
-        #                {'type': 'ineq', 'fun': lambda x: x[5] - x[9]}]
-
         solution = minimize(compute_coalescence, x0=x0, args=(f_values, n), bounds=(n + nc2) * [(bounds[0], bounds[1])],
                             constraints=constraints)
         x = solution.x
@@ -62,14 +58,26 @@ class Fst:
         row_indices, col_indices = np.triu_indices(n, 1)
         T[(row_indices, col_indices)] = x[0:nc2]
         T[(col_indices, row_indices)] = x[0:nc2]
-        # T[np.triu_indices(n, 1)] = x[0:nc2]
-        # T[np.tril_indices(n, -1)] = x[0:nc2]
-        return T
+        return T, solution
 
-    def produce_migration(self, x0=None, bounds=(0, 2), conservative=True) -> tuple:
+    def produce_migration(self, x0=None, bounds=(0, np.inf), conservative=True) -> tuple:
+        """
+        produces and returns the migration matrix induced by the Fst matrix, using a numerical solver.
+        This is a direct approach where the migration matrix is produced directly from the Fst matrix, without the
+        intermediate step of producing the coalescence matrix.
+        :param x0: Startin poitn for the numerical solver. if None, a random vector is generated.
+        :param bounds: bounds for each unknown migration value. default is (0, inf). bounds should be a tuple of two
+                       or a list of two arrays, first is lower bounds for each variable,
+                       second is upper bounds for each variable.
+        :param conservative:  Indicates whether the migration matrix should be conservative. default is True. This
+                              does not guarantee that the migration matrix will be conservative!
+        :return: A tuple (matrix, solution).
+        One possible corresponding migration matrix, according to W.H and Slatkin's equations, and details
+        about the solution of the numerical solver.
+        """
         n, nc2 = self.shape, comb(self.shape, 2)
         if x0 is None:
-            x0 = np.random.uniform(low=0, high=2 * n, size=(n ** 2,))
+            x0 = np.random.uniform(low=-2, high=2, size=(n ** 2,))
         M = np.zeros((n, n))
         f_values = self.matrix.flatten()
         constraints = None
@@ -87,4 +95,3 @@ class Fst:
             M[i, 0:i] = x[start_ind:start_ind + i]
             M[i, i + 1:n] = x[start_ind + i:start_ind + n - 1]
         return M, solution
-# 2.70993953

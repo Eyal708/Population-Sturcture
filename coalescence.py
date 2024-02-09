@@ -1,9 +1,15 @@
 import numpy as np
-from Helper_funcs import comb
+from helper_funcs import comb
 import scipy as sp
 
 
 class Coalescence:
+    """
+    A class that represents a Coalescence matrix and provides methods to produce the corresponding
+    Fst matrix and migration matrix.
+    The production of the Fst matrix is according to Slatkin's 1991 paper.
+    The production of the migration matrix is according to Wilkinson-Herbot's 2003 paper, and Xiran Liu's 2019 paper.
+    """
     def __init__(self, matrix: np.ndarray) -> None:
         """
         Initialize a coalescence times matrix object
@@ -31,11 +37,12 @@ class Coalescence:
 
     def produce_migration(self, bounds=(0, 2)) -> tuple:
         """
-        produce and return the migration matrix induced by the coefficient matrix A(which is induced by T).
+        produce and return the migration matrix induced by the coefficient matrix A (which is induced by T).
         :param bounds: bounds for each individual variable. default is 0 < x < 2. bounds should be given as a tuple
-        of 2 arrays of size n**2-n (where n is the number of populations). first array represents lower bounds, second
-        array represents upper bounds. if a tuple with 2 scalars is given instead, they will be the bounds for each
-        variable.
+                       of 2 arrays of size n**2-n (where n is the number of populations). first array represents lower
+                       bounds, second
+                       array represents upper bounds. if a tuple with 2 scalars is given instead,
+                       they will be the bounds for each variable.
         :return: (Migration matrix corresponding to object's Coalescence matrix, output of scipy.optimize.lsq_linear).
         """
         n = self.shape
@@ -102,7 +109,7 @@ class Coalescence:
 
     def produce_solution_vector(self) -> np.ndarray:
         """
-        produce the solution vector(b), according to Wilkinson-Herbot's equations
+        produce the solution vector(b), according to Wilkinson-Herbot's equations.
         :return: solution vector b
         """
         n = self.shape

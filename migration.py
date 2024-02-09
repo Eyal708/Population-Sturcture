@@ -1,8 +1,18 @@
 import numpy as np
-from Helper_funcs import comb as comb
+from helper_funcs import comb as comb
+import ctypes
+
+lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
+lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
+lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
 
 
 class Migration:
+    """
+    A class that represents a migration matrix and provides methods to produce the corresponding
+    coalescence matrix. The production of the coalescence matrix is according to Wilkinson-Herbot's 2003 paper.
+    """
+
     def __init__(self, matrix: np.ndarray) -> None:
         """
         Initialize a migration matrix object
@@ -10,23 +20,58 @@ class Migration:
         """
         self.matrix = matrix
         self.shape = matrix.shape[0]
+        # load the C  library to use the C function for calculating of the coefficient matrix efficiently.
+        # lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
+        # lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
+        # lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
+        # self.lib = lib
 
-    def produce_coalescence(self) -> np.ndarray:
+    def produce_coalescence_old(self) -> np.ndarray:
         """
-        produces and returns the corresponding coalescence matrix
+        produces and returns the corresponding coalescence matrix. This is the old method that doesn't use the
+        coefficient_matrix_from_migration_wrapper method, which means it is less efficient.
         :return: The corresponding coalescence matrix
         """
         A = self.produce_coefficient_matrix()
         b = self.produce_solution_vector()
         x = np.linalg.solve(A, b)
         T_mat = np.zeros((self.shape, self.shape))
-        cur_ind = 0
-        for i in range(self.shape):
-            for j in range(i, self.shape):
-                T_mat[i, j] = x[cur_ind]
-                T_mat[j, i] = x[cur_ind]
-                cur_ind += 1
+        # Assign values from x to T_mat using the upper triangular indices
+        i, j = np.triu_indices(self.shape)
+        T_mat[i, j] = x
+        T_mat[j, i] = x
         return T_mat
+
+    def produce_coalescence(self) -> np.ndarray:
+        """
+        produces and returns the corresponding coalescence matrix. This is the efficient method that uses the
+        coefficient_matrix_from_migration_wrapper method (runs in C).
+        :return: The corresponding coalescence matrix
+        """
+        A = self.coefficient_matrix_from_migration_wrapper()
+        b = self.produce_solution_vector()
+        x = np.linalg.solve(A, b)
+        T_mat = np.zeros((self.shape, self.shape))
+        i, j = np.triu_indices(self.shape)
+        T_mat[i, j] = x
+        T_mat[j, i] = x
+        return T_mat
+
+    def coefficient_matrix_from_migration_wrapper(self) -> np.ndarray:
+        """
+        Wrapper for the C function that calculates the coefficient matrix from the migration matrix.
+        :return: the coefficient matrix corresponding to the migration matrix.
+        """
+        # load the C  library to use the C function for calculating of the coefficient matrix efficiently.
+        # lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
+        # lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
+        # lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
+        n = self.shape
+        mat_size = n + (n * (n - 1)) // 2  # size of the coefficient matrix
+        migration_matrix_c = self.matrix.flatten().ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        result_c = lib.coefficient_matrix_from_migration(migration_matrix_c, n)
+        result = np.ctypeslib.as_array(result_c, shape=(mat_size * mat_size,)).reshape((mat_size, mat_size))
+        return result
 
     def calculate_first_coefficients(self, j: int, i: int, same_pop: int, lower_bound: int, upper_bound: int,
                                      p_list: list, counter: list) -> float:

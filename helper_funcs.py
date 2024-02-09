@@ -18,13 +18,12 @@ def compute_coalescence(t: np.ndarray, f: np.ndarray, n: int) -> float:
     returns the equations that describe the connection between coalescent times and Fst
     of all populations 1,2...n (Slatkin). These are the equations to minimize in order to find possible T matrices.
     :param t: an array representing [T(1,2),T(1,3)...,T(1,n),T(2,3)...,T(2,n),...T(1,1),T(2,2),...,T(n,n)], which are
-    the variables to solve. Size of the array(number of unknowns) in nC2 + n.
+              the variables to solve. Size of the array(number of unknowns) in nC2 + n.
     :param f: array of Fst values [F(1,2),F(1,3),,,,F(1,n),F(2,3),...F(2,n),...F(n-1,n)]. Array size is nC2.
     :param n: number of populations.
     :return: A list of all the equations that describe the connection between coalescent times and Fst
-    of all populations 1,2...n (Slatkin).
+             of all populations 1,2...n (Slatkin).
     """
-    # added_eqs = 0
     eqs_lst = []
     nC2 = comb(n, 2)
     k = 0
@@ -32,11 +31,7 @@ def compute_coalescence(t: np.ndarray, f: np.ndarray, n: int) -> float:
         for j in range(i + 1, n):
             eq = t[k] - (0.5 * (t[nC2 + i] + t[nC2 + j]) * ((1 + f[k]) / (1 - f[k])))
             eqs_lst.append(eq)
-            # if added_eqs < n:
-            #     eqs_lst.append(eq)
-            #     added_eqs += 1
             k += 1
-    # return np.repeat(t[0] - (0.5 * (t[1] + t[2]) * ((1 + f) / (1 - f))), 3)
     return np.linalg.norm(eqs_lst)
 
 
@@ -103,7 +98,7 @@ def cons_migration_constraint_generator(n: int, i: int) -> callable:
         mask = indices[:, 0] != indices[:, 1]  # Off-diagonal mask
         m = np.zeros((n, n))
         m[tuple(indices[mask].T)] = m_values
-        return np.sum(m[i, :]) - np.sum(m[:, i])
+        return np.sum(m[i, :]).round(2) - np.sum(m[:, i]).round(2)
 
     return constraint
 
@@ -120,9 +115,13 @@ def check_constraint(t: np.ndarray) -> bool:
 
 
 def check_conservative(m: np.ndarray):
-    m = np.round(m, decimals=2)
+    """
+    checks if a given migration matrix is conservative.
+    :param m: A migration matrix
+    :return: True if m is conservative, False otherwise.
+    """
     for i in range(m.shape[0]):
-        if np.sum(m[i, :]) != np.sum(m[:, i]):
+        if np.sum(m[i, :]).round(2) != np.sum(m[:, i]).round(2):
             return False
     return True
 
@@ -200,7 +199,7 @@ def split_migration_matrix(migration_matrix: np.ndarray, connected_components: l
     Splits a migration matrix to sub-matrices according to it's connected components.
     :param migration_matrix: A valid migration matrix.
     :param connected_components: list of lists, where each list represents a connected component's vertices
-    (populations).
+                                (populations).
     :return: A list of sub-matrices, where each sun-matrix is the migration matrix of a connected component. Note that
     in order to interpret which populations are described in each sub matrix the connected components list is needed.
     """
@@ -217,8 +216,8 @@ def split_migration(migration_matrix: np.ndarray) -> tuple:
     Finds a migration matrix connected components, and splits the matrix to it's connected components.
     :param migration_matrix: A valid migration matrix.
     :return: A tuple (sub_matrices, components). Sub matrices is a list of numpy arrays, where each array is a
-    component's migration matrix. components is a list of lists, where each list represents a component vertices
-    (populations). The order of the components corresponds to the order of the sub-matrices.
+            component's migration matrix. components is a list of lists, where each list represents a component vertices
+            (populations). The order of the components corresponds to the order of the sub-matrices.
     """
     components = list(find_components(migration_matrix).values())
     sub_matrices = split_migration_matrix(migration_matrix, components)
@@ -230,9 +229,9 @@ def reassemble_matrix(sub_matrices: list, connected_components: list, which: str
     Reassembles an Fst/Coalescence matrix according to sub-matrices and the connected components.
     :param sub_matrices: The sub matrices from which to assemble the matrix. A list of 2-D numpy arrays.
     :param connected_components: A list of lists, where each list is the connected components. Inidcates how the matrix
-    should be assembled.
+                                 should be assembled.
     :param which: Either "fst" or "coalescence". Indicated whether the assembled matrix is an Fst matrix or a
-    coalescence matrix. This is important for initialization of the returned matrix.
+                  coalescence matrix. This is important for initialization of the returned matrix.
     :return: The assembled Fst or Coalescence matrix.
     """
     num_nodes = sum(len(component) for component in connected_components)
