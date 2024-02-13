@@ -14,7 +14,7 @@ class Migration:
         Initialize a migration matrix object
         :param matrix: input migration matrix
         """
-        self.matrix = matrix
+        self.matrix = matrix.astype(float)
         self.shape = matrix.shape[0]
         self.lib = None
 
@@ -49,7 +49,6 @@ class Migration:
         coefficient_matrix_from_migration_wrapper method (runs in C).
         :return: The corresponding coalescence matrix
         """
-        self.load_c_library()
         A = self.coefficient_matrix_from_migration_wrapper()
         b = self.produce_solution_vector()
         x = np.linalg.solve(A, b)
@@ -68,6 +67,7 @@ class Migration:
         # lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
         # lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
         # lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
+        self.load_c_library()
         n = self.shape
         mat_size = n + (n * (n - 1)) // 2  # size of the coefficient matrix
         migration_matrix_c = self.matrix.flatten().ctypes.data_as(ctypes.POINTER(ctypes.c_double))
