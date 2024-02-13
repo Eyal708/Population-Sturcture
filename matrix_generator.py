@@ -1,5 +1,5 @@
-from Migration import Migration
-from Coalescence import Coalescence
+from migration import Migration
+from coalescence import Coalescence
 import numpy as np
 import scipy as sp
 
@@ -46,4 +46,3 @@ def generate_pseudo_random_fst_mat(n: int = 3, bounds=(0, 2), decimals=2) -> np.
     T = Coalescence(t)
     random_f = T.produce_fst()
     return np.round(random_f, decimals=decimals)
-

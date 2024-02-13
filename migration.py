@@ -2,10 +2,6 @@ import numpy as np
 from helper_funcs import comb as comb
 import ctypes
 
-lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
-lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
-lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
-
 
 class Migration:
     """
@@ -20,11 +16,16 @@ class Migration:
         """
         self.matrix = matrix
         self.shape = matrix.shape[0]
-        # load the C  library to use the C function for calculating of the coefficient matrix efficiently.
-        # lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
-        # lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
-        # lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
-        # self.lib = lib
+        self.lib = None
+
+    def load_c_library(self) -> None:
+        """
+        Loads the C library that calculates the coefficient matrix.
+        """
+        lib = ctypes.cdll.LoadLibrary('./libmigration_noGSL.dll')
+        lib.coefficient_matrix_from_migration.restype = ctypes.POINTER(ctypes.c_double)
+        lib.coefficient_matrix_from_migration.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_int]
+        self.lib = lib
 
     def produce_coalescence_old(self) -> np.ndarray:
         """
@@ -48,6 +49,7 @@ class Migration:
         coefficient_matrix_from_migration_wrapper method (runs in C).
         :return: The corresponding coalescence matrix
         """
+        self.load_c_library()
         A = self.coefficient_matrix_from_migration_wrapper()
         b = self.produce_solution_vector()
         x = np.linalg.solve(A, b)
@@ -69,7 +71,7 @@ class Migration:
         n = self.shape
         mat_size = n + (n * (n - 1)) // 2  # size of the coefficient matrix
         migration_matrix_c = self.matrix.flatten().ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        result_c = lib.coefficient_matrix_from_migration(migration_matrix_c, n)
+        result_c = self.lib.coefficient_matrix_from_migration(migration_matrix_c, n)
         result = np.ctypeslib.as_array(result_c, shape=(mat_size * mat_size,)).reshape((mat_size, mat_size))
         return result
 
