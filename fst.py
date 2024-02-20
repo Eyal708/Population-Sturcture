@@ -60,7 +60,7 @@ class Fst:
         T[(col_indices, row_indices)] = x[0:nc2]
         return T, solution
 
-    def produce_migration(self, x0=None, bounds=(0, np.inf), conservative=True) -> tuple:
+    def produce_migration(self, x0=None, bounds=(0, 2), conservative=True) -> tuple:
         """
         produces and returns the migration matrix induced by the Fst matrix, using a numerical solver.
         This is a direct approach where the migration matrix is produced directly from the Fst matrix, without the
@@ -75,7 +75,7 @@ class Fst:
         """
         n, nc2 = self.shape, comb(self.shape, 2)
         if x0 is None:
-            x0 = np.random.uniform(low=-2, high=2, size=(n ** 2,))
+            x0 = np.random.uniform(low=0, high=2 * n, size=(n ** 2,))
         M = np.zeros((n, n))
         f_values = self.matrix.flatten()
         constraints = None
