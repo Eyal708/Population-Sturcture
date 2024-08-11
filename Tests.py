@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Migration import Migration
-from Coalescence import Coalescence
-from Fst import Fst
+from migration import Migration
+from coalescence import Coalescence
+from fst import Fst
 from colorama import Fore, init
-from Helper_funcs import matrix_distance, diameter, check_constraint, \
+from helper_funcs import matrix_distance, diameter, check_constraint, \
     find_components, split_migration_matrix, split_migration, check_conservative
 from Transformation import m_to_f, m_to_t
-from Matrix_generator import generate_pseudo_random_fst_mat
+from matrix_generator import generate_pseudo_random_fst_mat
+from Transformation import m_to_f
 
 init(autoreset=True)
 
@@ -288,14 +289,18 @@ def check_xiran_sol():
     # F = Fst(f)
     # print(np.round(F.produce_migration(), 2))
     # From Xiran's paper
+    x0 = [1.27, 0.57, 0.72, 0.63, 1.41, 1.33, 0, 0.01, 2.97, 1.93, 2.1, 1] + list(np.random.uniform(-8, 8, 4))
     f_2 = np.array([[0, 0.12, 0.14, 0.09], [0.12, 0, 0.11, 0.08], [0.14, 0.11, 0, 0.09], [0.09, 0.08, 0.09, 0]])
     F = Fst(f_2)
     cons, not_cons = 0, 0
     min_fun = np.inf
+    min_fun_cons = np.inf
     best_mat = None
+    best_cons_mat = None
     best_sol = None
+    best_cons_sol = None
     for i in range(1000):
-        solution = F.produce_migration(conservative=False)
+        solution = F.produce_migration(conservative=True)
         mat = solution[0]
         cur_fun = solution[1].fun
         if cur_fun < min_fun:
@@ -304,6 +309,10 @@ def check_xiran_sol():
             best_sol = solution[1]
         if check_conservative(mat):
             cons += 1
+            if cur_fun < min_fun_cons:
+                best_cons_mat = mat
+                min_fun_cons = cur_fun
+                best_cons_sol = solution[1]
         else:
             not_cons += 1
 
@@ -313,6 +322,10 @@ def check_xiran_sol():
     print(check_conservative(best_mat))
     print(f"Number of conservative matrices: {cons}")
     print(f"Number of not conservative matrices: {not_cons}")
+    print("Best conservative matrix:")
+    print(best_cons_mat)
+    print(min_fun_cons)
+    print(best_cons_sol)
     # f_2 = generate_pseudo_random_fst_mat(4)
     # F_2 = Fst(f_2)
     # min_fun = np.inf
@@ -342,8 +355,21 @@ def check_xiran_sol():
     # print(f"Value of target function at solution is: {min_fun}")
 
 
+def check_f_to_m():
+    original_m = np.array([[0, 1.27, 0.57, 0.72], [0.63, 0, 1.41, 1.33], [0, 0.01, 0, 2.97], [1.93, 2.1, 1, 0]])
+    original_f = m_to_f(original_m)
+    original_F = Fst(original_f)
+    for i in range(100):
+        inferred_m = original_F.produce_migration(conservative=True)
+        print(f"Inferred m: {inferred_m[0]}")
+        inferred_fst = m_to_f(inferred_m[0])
+        print(f"Inferred fst: {inferred_fst}")
+        print(f"Is similar to original f? {np.array_equal(original_f.round(2),inferred_fst.round(2))}")
+
+
 if __name__ == "__main__":
-    check_xiran_sol()
+    check_f_to_m()
+    # check_xiran_sol()
     # test_split_migration()
     # test_produce_coalescence()
     # test_produce_fst()

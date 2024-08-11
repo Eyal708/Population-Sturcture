@@ -65,7 +65,7 @@ class Fst:
         produces and returns the migration matrix induced by the Fst matrix, using a numerical solver.
         This is a direct approach where the migration matrix is produced directly from the Fst matrix, without the
         intermediate step of producing the coalescence matrix.
-        :param x0: Starting point for the numerical solver. if None, a random vector is generated.
+        :param x0: Starting point for the numerical solver. if None, a random vector with bounds (0 ,2n) is used.
         :param bounds: bounds for each unknown migration value. Should ba tuple of two scalars, default is (0, inf).
         :param conservative:  Indicates whether the migration matrix should be conservative. default is True. This
                               does not guarantee that the migration matrix will be conservative!

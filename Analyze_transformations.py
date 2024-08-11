@@ -2,15 +2,15 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from Matrix_generator import generate_random_migration_mat, generate_pseudo_random_fst_mat
-from Coalescence import Coalescence
-from Fst import Fst
-from Migration import Migration
+from matrix_generator import generate_random_migration_mat, generate_pseudo_random_fst_mat
+from coalescence_eyal708 import Coalescence
+from fst import Fst
+from migration import Migration
 import time
 import pickle
 import seaborn as sb
 import sys
-from Helper_funcs import check_constraint, diameter, matrix_distance, matrix_mean
+from helper_funcs import check_constraint, diameter, matrix_distance, matrix_mean
 
 
 def analyze_t_matrices(f: np.ndarray, n=1000) -> list:
@@ -184,14 +184,14 @@ def box_plot_good_vs_bad():
     colors = {'Good T matrices': 'lightgreen', 'Bad T matrices': 'tomato'}
     palette = [colors[typ] for typ in ['Good T matrices', "Bad T matrices"]]
     # create the boxplot with grouped boxes
-    plt.figure(figsize=(10, 14))
+    plt.figure(figsize=(10, 14), alpha=1)
     ax = sb.boxplot(x=categories, y=data, hue=types, palette=palette, showfliers=False)
 
     # set y-axis ticks
 
     # label the axes and adjust font size
     ax.set_xlabel('Number of populations', fontsize=36)
-    ax.set_ylabel('LS cost', fontsize=36)
+    ax.set_ylabel('LLS cost', fontsize=36)
     ax.axvline(x=0.5, linestyle='--', color='gray', linewidth=1)
     ax.axvline(x=1.5, linestyle='--', color='gray', linewidth=1)
     ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=22)
@@ -201,6 +201,25 @@ def box_plot_good_vs_bad():
     plt.savefig("NewPlots/boxplot_good_VS_bad.svg")
     # show the plot
     plt.show()
+    """
+     plt.figure(figsize=(10, 14))
+    ax = sb.boxplot(x=categories, y=data, hue=types, palette=palette, showfliers=False)
+
+    # set y-axis ticks
+
+    # label the axes and adjust font size
+    ax.set_xlabel('Number of populations', fontsize=36)
+    ax.set_ylabel('Distance from ground truth', fontsize=36)
+    ax.axvline(x=0.5, linestyle='--', color='gray', linewidth=1)
+    ax.axvline(x=1.5, linestyle='--', color='gray', linewidth=1)
+    ax.legend(bbox_to_anchor=(0, 1), loc='upper left', fontsize=22)
+
+    # adjust font size of tick labels
+    ax.tick_params(axis='both', which='major', labelsize=26)
+    plt.savefig("NewPlots/good_VS_bad_distance_all.svg")
+    # show the plot
+    plt.show()
+    """
 
 
 def box_plot_good_vs_distance():
@@ -518,8 +537,28 @@ def compare_methods():
     plt.show()
 
 
+def compare_times():
+    total_time_x, total_time_e = 0, 0
+    for i in range(1000):
+        f = generate_pseudo_random_fst_mat()
+        F = Fst(f)
+        start = time.time()
+        F.produce_migration(conservative=False)
+        end = time.time()
+        total_time_x += end - start
+        start = time.time()
+        Coalescence(F.produce_coalescence(constraint=True)[0]).produce_migration()
+        end = time.time()
+        total_time_e += end - start
+    print(f"Xiran's average time: {total_time_x / 1000}")
+    print(f"Eyal's average time: {total_time_e / 1000}")
+
+
 if __name__ == "__main__":
-    compare_methods()
+    # box_plot_good_vs_distance()
+    box_plot_good_vs_bad()
+    # compare_times()
+    # compare_methods()
     # box_plot_pct()
     # box_plot_good_vs_bad()
     # box_plot_good_vs_distance()

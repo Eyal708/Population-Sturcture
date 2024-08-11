@@ -1,4 +1,4 @@
-from Migration import Migration
+from migration import Migration
 import numpy as np
 
 

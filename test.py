@@ -1,56 +1,53 @@
+import time
+
 import numpy as np
-from Coalescence import Coalescence
-from Fst import Fst
-from Matrix_generator import generate_pseudo_random_fst_mat
-from Helper_funcs import matrix_distance, diameter, check_constraint, \
-    find_components, split_migration_matrix, split_migration
-from Transformations import m_to_t, m_to_f, m_to_t_and_f
+import csv
+from coalescence import Coalescence
+from fst import Fst
+from migration import Migration
+from matrix_generator import generate_pseudo_random_fst_mat, generate_random_migration_mat
+from helper_funcs import matrix_distance, diameter, check_constraint, \
+    find_components, split_migration_matrix, split_migration, check_conservative
+from utils import f_to_m, m_to_f
 
-# wrong_cnt = 0
-# bad_cnt = 0
-# for i in range(500):
-#     f = generate_pseudo_random_fst_mat(n=3)
-#     F = Fst(f)
-#     t = F.produce_coalescence(constraint=False)
-#     T = Coalescence(t)
-#     new_f = T.produce_fst()
-#     if not(check_constraint(t)):
-#         print(f"{t} is not a good t matrix!")
-#         bad_cnt += 1
-#     if not np.array_equal(np.round(f, 2), np.round(new_f, 2)):
-#         print(f"Original F:\n{f}\n is no equal to new F:\n{new_f}")
-#         wrong_cnt += 1
+f = np.array([[0, 0.14, 0.14], [0.14, 0, 0.14], [0.14, 0.14, 0]])
+#make a similar matrix to f but 5X5
+f_2 = np.array([[0, 0.14, 0.14, 0.14, 0.14], [0.14, 0, 0.14, 0.14, 0.14], [0.14, 0.14, 0, 0.14, 0.14], [0.14, 0.14, 0.14, 0, 0.14], [0.14, 0.14, 0.14, 0.14, 0]])
+F = Fst(f_2)
+# vector of zeroes of size 9
+# x0 = np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
+m, sol = F.produce_migration()
+print(check_conservative(m))
+print(m)
+print(sol)
+# basic_migration = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
+# random_migration = generate_random_migration_mat(3)
+# # print(m_to_f(random_migration))
+# migration_matrix = generate_random_migration_mat(3)
+# print("migration_matrix")
+# print(basic_migration)
+# m = Migration(basic_migration)
+# print("m.produce_coefficient_matrix()")
+# print(f"{m.produce_coefficient_matrix()}\n")
+# print("m.coefficient_matrix_from_migration_wrapper()")
+# print(m.coefficient_matrix_from_migration_wrapper())
+# print("m.produce_coalescence()")
+# load matrix.csv to matrix
+# with open('matrix.csv', newline='') as csvfile:
+#     data = list(csv.reader(csvfile))
+#     print(data)
+#     # convert data to numpy 2d array
+#     matrix = np.array(data)
+#     print(matrix)
+#     # get time in seconds
+#     start = time.time()
+#     print(m_to_f(matrix))
+#     end = time.time()
+#     print(end - start)
 
-# mat = np.array([[0, 1, 1, 0, 0], [1, 0, 1, 0, 0], [1, 1, 0, 0, 0], [0, 0, 0, 0, 1], [0, 0, 0, 1, 0]])
-# mat_2 = np.array([[0, 0, 0, 0, 0.1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0.1, 0, 0, 0], [0, 0, 0, 0, 0]])
-# mat_3 = np.array([[0, 0.1, 0, 0, 0], [0, 0, 0.1, 0, 0], [0, 0, 0, 0.1, 0], [0, 0, 0, 0, 0.1], [0, 0, 0, 0, 0]])
-# mat_4 = np.array([[0, 0, 0, 0.1], [0, 0, 0.1, 0], [0, 0.1, 0, 0], [0.1, 0, 0, 0]])
-# mat_5 = np.array([[0, 1, 0, 1], [1, 0, 0, 1], [0, 0, 0, 0], [1, 1, 0, 0]])
-# mat_6 = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
-# mat_7 = np.array([[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 0]])
-# mat_8 = np.array([[0, 0.5, 0, 0.5], [1, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0]])
-# fst = m_to_f(mat_8)
-# t = m_to_t(mat_8)
-# result = m_to_t_and_f(mat_8)
-# t_2, fst_2 = result[0], result[1]
-# print(fst)
-# print(fst_2)
-# print(t)
-# print(t_2)
-# F = Fst(fst)
-# new_t = F.produce_coalescence()
-# print(new_t)
-# a = np.array([1, 2, 3, 4])
-# b = np.array([1, 1, 1, 1])
-# print(np.linalg.multi_dot((a, a * a)))
-# print(a + 2)
-# print(a @ a)
-# print(a[1:1])
-# print(np.concatenate((a[:1], a[5:])))
-# print(np.repeat(['x', 'm'], 100))
-# print(np.tile(['x','m'],100))
-# print(5 * [(0, 1)])
-m = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-for i in range(m.shape[0]):
-    print(np.sum(m[i, :]))
-    print(np.sum(m[:, i]))
+# print(m.produce_coalescence())
+# print("m.produce_coalescence_old()")
+# print(m.produce_coalescence_old())
+# print("fst matrix from produce_coalescence()")
+# print(m_to_f(migration_matrix))
+# print(f"fst matrix from produce_coalescence_old()\n{Coalescence(m.produce_coalescence_old()).produce_fst()}")

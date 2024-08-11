@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from Migration import Migration
-from Coalescence import Coalescence
-from Fst import Fst
-from Matrix_generator import generate_random_migration_mat
+from migration import Migration
+from coalescence import Coalescence
+from fst import Fst
+from matrix_generator import generate_random_migration_mat
 
 
 def plot_5_transformations(initial_m: np.ndarray) -> None:
